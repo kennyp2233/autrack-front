@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
@@ -81,10 +81,10 @@ export default function RegisterScreen() {
                 confirmPassword,
                 acceptTerms
             });
-            // No es necesario la navegación aquí, el AuthContext la maneja
+            // La navegación se maneja dentro del AuthContext si el registro es exitoso
         } catch (error) {
-            console.error('Error al registrarse:', error);
-            alert('Error al registrarse. Inténtelo de nuevo.');
+            // El error ya se maneja en el contexto, no es necesario hacer nada aquí
+            console.log("Error capturado en pantalla de registro:", error);
         }
     };
 
@@ -99,6 +99,7 @@ export default function RegisterScreen() {
                     <TouchableOpacity
                         style={styles.backButton}
                         onPress={() => router.back()}
+                        disabled={isLoading}
                     >
                         <Feather name="chevron-left" size={24} color="#4B5563" />
                     </TouchableOpacity>
@@ -110,7 +111,10 @@ export default function RegisterScreen() {
                     {/* Full Name Field */}
                     <View style={styles.inputContainer}>
                         <Text style={styles.inputLabel}>Nombre completo</Text>
-                        <View style={[styles.inputWrapper, errors.fullName ? styles.inputError : null]}>
+                        <View style={[
+                            styles.inputWrapper, 
+                            errors.fullName ? styles.inputError : null
+                        ]}>
                             <Feather name="user" size={18} color="#9CA3AF" style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
@@ -122,6 +126,7 @@ export default function RegisterScreen() {
                                         setErrors({ ...errors, fullName: undefined });
                                     }
                                 }}
+                                editable={!isLoading}
                             />
                         </View>
                         {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
@@ -130,7 +135,10 @@ export default function RegisterScreen() {
                     {/* Email Field */}
                     <View style={styles.inputContainer}>
                         <Text style={styles.inputLabel}>Correo electrónico</Text>
-                        <View style={[styles.inputWrapper, errors.email ? styles.inputError : null]}>
+                        <View style={[
+                            styles.inputWrapper,
+                            errors.email ? styles.inputError : null
+                        ]}>
                             <Feather name="mail" size={18} color="#9CA3AF" style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
@@ -144,6 +152,7 @@ export default function RegisterScreen() {
                                 }}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
+                                editable={!isLoading}
                             />
                         </View>
                         {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
@@ -152,7 +161,10 @@ export default function RegisterScreen() {
                     {/* Password Field */}
                     <View style={styles.inputContainer}>
                         <Text style={styles.inputLabel}>Contraseña</Text>
-                        <View style={[styles.inputWrapper, errors.password ? styles.inputError : null]}>
+                        <View style={[
+                            styles.inputWrapper,
+                            errors.password ? styles.inputError : null
+                        ]}>
                             <Feather name="lock" size={18} color="#9CA3AF" style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
@@ -165,10 +177,12 @@ export default function RegisterScreen() {
                                     }
                                 }}
                                 secureTextEntry={!showPassword}
+                                editable={!isLoading}
                             />
                             <TouchableOpacity
                                 style={styles.passwordToggle}
                                 onPress={() => setShowPassword(!showPassword)}
+                                disabled={isLoading}
                             >
                                 <Feather name={showPassword ? "eye-off" : "eye"} size={18} color="#9CA3AF" />
                             </TouchableOpacity>
@@ -179,7 +193,10 @@ export default function RegisterScreen() {
                     {/* Confirm Password Field */}
                     <View style={styles.inputContainer}>
                         <Text style={styles.inputLabel}>Confirmar contraseña</Text>
-                        <View style={[styles.inputWrapper, errors.confirmPassword ? styles.inputError : null]}>
+                        <View style={[
+                            styles.inputWrapper,
+                            errors.confirmPassword ? styles.inputError : null
+                        ]}>
                             <Feather name="lock" size={18} color="#9CA3AF" style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
@@ -192,10 +209,12 @@ export default function RegisterScreen() {
                                     }
                                 }}
                                 secureTextEntry={!showConfirmPassword}
+                                editable={!isLoading}
                             />
                             <TouchableOpacity
                                 style={styles.passwordToggle}
                                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                                disabled={isLoading}
                             >
                                 <Feather name={showConfirmPassword ? "eye-off" : "eye"} size={18} color="#9CA3AF" />
                             </TouchableOpacity>
@@ -213,6 +232,7 @@ export default function RegisterScreen() {
                                     setErrors({ ...errors, acceptTerms: undefined });
                                 }
                             }}
+                            disabled={isLoading}
                         >
                             <View style={[styles.checkbox, acceptTerms ? styles.checkboxChecked : null]}>
                                 {acceptTerms && <Feather name="check" size={12} color="white" />}
@@ -231,21 +251,25 @@ export default function RegisterScreen() {
 
                     {/* Register Button */}
                     <TouchableOpacity
-                        style={styles.registerButton}
+                        style={[styles.registerButton, isLoading && styles.registerButtonDisabled]}
                         onPress={handleRegister}
                         disabled={isLoading}
                     >
-                        <Text style={styles.registerButtonText}>
-                            {isLoading ? 'Cargando...' : 'Crear cuenta'}
-                        </Text>
-                        {!isLoading && <Feather name="arrow-right" size={18} color="white" style={{ marginLeft: 8 }} />}
+                        {isLoading ? (
+                            <ActivityIndicator color="white" />
+                        ) : (
+                            <>
+                                <Text style={styles.registerButtonText}>Crear cuenta</Text>
+                                <Feather name="arrow-right" size={18} color="white" style={{ marginLeft: 8 }} />
+                            </>
+                        )}
                     </TouchableOpacity>
 
                     {/* Login Link */}
                     <View style={styles.loginContainer}>
                         <Text style={styles.loginText}>¿Ya tienes una cuenta? </Text>
                         <Link href="/(auth)/login" asChild>
-                            <TouchableOpacity>
+                            <TouchableOpacity disabled={isLoading}>
                                 <Text style={styles.loginLink}>Inicia sesión</Text>
                             </TouchableOpacity>
                         </Link>
@@ -255,7 +279,6 @@ export default function RegisterScreen() {
         </KeyboardAvoidingView>
     );
 }
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -364,6 +387,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 24,
+    },
+    registerButtonDisabled: {
+        backgroundColor: '#a8c7fa',
     },
     registerButtonText: {
         color: 'white',

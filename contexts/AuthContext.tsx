@@ -1,6 +1,10 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter, useSegments } from 'expo-router';
+import { Alert } from 'react-native';
 import { User, AuthCredentials, RegisterData } from '../types/Users';
+
+// API base URL
+const API_URL = 'http://192.168.100.39:3000/api/v1/auth';
 
 interface AuthContextType {
     user: User | null;
@@ -27,6 +31,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [token, setToken] = useState<string | null>(null);
     const router = useRouter();
     const segments = useSegments();
 
@@ -47,44 +52,74 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Verificar si hay un usuario almacenado al iniciar la aplicación
     useEffect(() => {
-        // Simular la carga de un usuario almacenado localmente
-        const loadUser = async () => {
+        const loadUserFromStorage = async () => {
             try {
-                // Aquí se implementaría la lógica para cargar el usuario desde almacenamiento local
-                // Por ahora simulamos la ausencia de usuario almacenado
+                // Aquí implementarías la lógica para cargar el token y usuario desde AsyncStorage
+                // const storedToken = await AsyncStorage.getItem('userToken');
+                // const storedUser = await AsyncStorage.getItem('userData');
+                
+                // Por ahora, simulamos que no hay datos almacenados
+                setToken(null);
                 setUser(null);
             } catch (error) {
-                console.error('Error al cargar el usuario:', error);
-                setUser(null);
+                console.error('Error al cargar datos de usuario:', error);
             } finally {
                 setIsLoading(false);
             }
         };
 
-        loadUser();
+        loadUserFromStorage();
     }, []);
 
     // Función para iniciar sesión
     const login = async (credentials: AuthCredentials) => {
         setIsLoading(true);
+        console.log(API_URL);
         try {
-            // Aquí se implementaría la lógica de autenticación con API
-            // Por ahora simulamos un usuario de prueba
-            const mockUser: User = {
-                id: 1,
-                email: credentials.email,
-                fullName: 'Usuario de Prueba',
-                createdAt: new Date().toISOString(),
-                lastLogin: new Date().toISOString(),
-            };
+            const response = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    correo: credentials.email,
+                    contrasena: credentials.password
+                }),
+            });
 
-            // Guardar usuario en el estado y almacenamiento local
-            setUser(mockUser);
-            // Aquí se guardaría el usuario en almacenamiento local
 
-            router.replace('/(app)');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Error al iniciar sesión');
+            }
+
+            const data = await response.json();
+            
+            if (data.user && data.token) {
+                // Transformar la respuesta de la API a nuestro formato de Usuario
+                const userData: User = {
+                    id: data.user.id,
+                    email: data.user.correo,
+                    fullName: data.user.nombre_completo,
+                    createdAt: data.user.fecha_creacion,
+                    lastLogin: data.user.ultimo_inicio_sesion
+                };
+                
+                // Guardar en el estado
+                setUser(userData);
+                setToken(data.token);
+                
+                // Guardar en AsyncStorage para persistencia
+                // await AsyncStorage.setItem('userToken', data.token);
+                // await AsyncStorage.setItem('userData', JSON.stringify(userData));
+                
+                router.replace('/(app)');
+            } else {
+                throw new Error('Datos de usuario incompletos');
+            }
         } catch (error) {
             console.error('Error al iniciar sesión:', error);
+            Alert.alert('Error', error instanceof Error ? error.message : 'Error al iniciar sesión');
             throw error;
         } finally {
             setIsLoading(false);
@@ -95,22 +130,50 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const register = async (data: RegisterData) => {
         setIsLoading(true);
         try {
-            // Aquí se implementaría la lógica de registro con API
-            // Por ahora simulamos un usuario de prueba
-            const mockUser: User = {
-                id: 1,
-                email: data.email,
-                fullName: data.fullName,
-                createdAt: new Date().toISOString(),
-            };
+            const response = await fetch(`${API_URL}/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    correo: data.email,
+                    nombre_completo: data.fullName,
+                    contrasena: data.password
+                }),
+            });
 
-            // Guardar usuario en el estado y almacenamiento local
-            setUser(mockUser);
-            // Aquí se guardaría el usuario en almacenamiento local
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Error al registrarse');
+            }
 
-            router.replace('/(app)');
+            const responseData = await response.json();
+            
+            if (responseData.user && responseData.token) {
+                // Transformar la respuesta de la API a nuestro formato de Usuario
+                const userData: User = {
+                    id: responseData.user.id,
+                    email: responseData.user.correo,
+                    fullName: responseData.user.nombre_completo,
+                    createdAt: responseData.user.fecha_creacion,
+                    lastLogin: responseData.user.ultimo_inicio_sesion
+                };
+                
+                // Guardar en el estado
+                setUser(userData);
+                setToken(responseData.token);
+                
+                // Guardar en AsyncStorage para persistencia
+                // await AsyncStorage.setItem('userToken', responseData.token);
+                // await AsyncStorage.setItem('userData', JSON.stringify(userData));
+                
+                router.replace('/(app)');
+            } else {
+                throw new Error('Datos de usuario incompletos');
+            }
         } catch (error) {
             console.error('Error al registrarse:', error);
+            Alert.alert('Error', error instanceof Error ? error.message : 'Error al registrarse');
             throw error;
         } finally {
             setIsLoading(false);
@@ -119,22 +182,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Función para cerrar sesión
     const logout = () => {
-        // Eliminar usuario del estado y almacenamiento local
+        // Eliminar usuario y token del estado
         setUser(null);
-        // Aquí se eliminaría el usuario del almacenamiento local
-
+        setToken(null);
+        
+        // Eliminar de AsyncStorage
+        // AsyncStorage.removeItem('userToken');
+        // AsyncStorage.removeItem('userData');
+        
         router.replace('/(auth)/login');
     };
 
     // Función para recuperar contraseña
     const forgotPassword = async (email: string) => {
         try {
-            // Aquí se implementaría la lógica para recuperar contraseña con API
-            console.log(`Enviando correo de recuperación a: ${email}`);
-            // Simular éxito
+            const response = await fetch(`${API_URL}/forgot-password`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ correo: email }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Error al enviar correo de recuperación');
+            }
+
             return Promise.resolve();
         } catch (error) {
             console.error('Error al enviar correo de recuperación:', error);
+            Alert.alert('Error', error instanceof Error ? error.message : 'Error al enviar correo');
             throw error;
         }
     };

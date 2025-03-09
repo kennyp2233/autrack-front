@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { Link } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,8 +15,8 @@ export default function LoginScreen() {
 
     // Validar email
     const isValidEmail = (email: string) => {
-        const re = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
-        return true;//re.test(email);
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
     };
 
     // Validar formulario
@@ -44,8 +44,8 @@ export default function LoginScreen() {
         try {
             await login({ email, password, rememberMe });
         } catch (error) {
-            console.error('Error al iniciar sesión:', error);
-            Alert.alert('Error', 'Error al iniciar sesión. Verifique sus credenciales.');
+            // El error ya se maneja en el contexto, no es necesario hacer nada aquí
+            console.log("Error capturado en pantalla de login:", error);
         }
     };
 
@@ -67,7 +67,10 @@ export default function LoginScreen() {
                 {/* Email */}
                 <View style={styles.inputContainer}>
                     <Text style={styles.label}>Correo electrónico</Text>
-                    <View style={styles.inputWrapper}>
+                    <View style={[
+                        styles.inputWrapper,
+                        errors.email ? styles.inputWrapperError : null
+                    ]}>
                         <Feather name="mail" size={18} color="#999" style={styles.inputIcon} />
                         <TextInput
                             style={styles.input}
@@ -79,6 +82,7 @@ export default function LoginScreen() {
                             }}
                             keyboardType="email-address"
                             autoCapitalize="none"
+                            editable={!isLoading}
                         />
                     </View>
                     {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
@@ -87,7 +91,10 @@ export default function LoginScreen() {
                 {/* Password */}
                 <View style={styles.inputContainer}>
                     <Text style={styles.label}>Contraseña</Text>
-                    <View style={styles.inputWrapper}>
+                    <View style={[
+                        styles.inputWrapper,
+                        errors.password ? styles.inputWrapperError : null
+                    ]}>
                         <Feather name="lock" size={18} color="#999" style={styles.inputIcon} />
                         <TextInput
                             style={styles.input}
@@ -98,8 +105,12 @@ export default function LoginScreen() {
                                 if (errors.password) setErrors({ ...errors, password: undefined });
                             }}
                             secureTextEntry={!showPassword}
+                            editable={!isLoading}
                         />
-                        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                        <TouchableOpacity 
+                            onPress={() => setShowPassword(!showPassword)}
+                            disabled={isLoading}
+                        >
                             <Feather name={showPassword ? "eye-off" : "eye"} size={18} color="#999" />
                         </TouchableOpacity>
                     </View>
@@ -111,6 +122,7 @@ export default function LoginScreen() {
                     <TouchableOpacity
                         style={styles.checkboxContainer}
                         onPress={() => setRememberMe(!rememberMe)}
+                        disabled={isLoading}
                     >
                         <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
                             {rememberMe && <Feather name="check" size={12} color="white" />}
@@ -119,7 +131,7 @@ export default function LoginScreen() {
                     </TouchableOpacity>
 
                     <Link href="/(auth)/recovery" asChild>
-                        <TouchableOpacity>
+                        <TouchableOpacity disabled={isLoading}>
                             <Text style={styles.forgotPassword}>¿Olvidaste tu contraseña?</Text>
                         </TouchableOpacity>
                     </Link>
@@ -127,20 +139,22 @@ export default function LoginScreen() {
 
                 {/* Login Button */}
                 <TouchableOpacity
-                    style={styles.loginButton}
+                    style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
                     onPress={handleLogin}
                     disabled={isLoading}
                 >
-                    <Text style={styles.loginButtonText}>
-                        {isLoading ? 'Cargando...' : 'Iniciar sesión'}
-                    </Text>
+                    {isLoading ? (
+                        <ActivityIndicator color="white" />
+                    ) : (
+                        <Text style={styles.loginButtonText}>Iniciar sesión</Text>
+                    )}
                 </TouchableOpacity>
 
                 {/* Register Link */}
                 <View style={styles.registerContainer}>
                     <Text>¿No tienes una cuenta? </Text>
                     <Link href="/(auth)/register" asChild>
-                        <TouchableOpacity>
+                        <TouchableOpacity disabled={isLoading}>
                             <Text style={styles.registerLink}>Regístrate</Text>
                         </TouchableOpacity>
                     </Link>
@@ -201,6 +215,9 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         paddingHorizontal: 8,
     },
+    inputWrapperError: {
+        borderColor: '#ff3b30',
+    },
     inputIcon: {
         marginRight: 8,
     },
@@ -209,7 +226,7 @@ const styles = StyleSheet.create({
         height: 48,
     },
     errorText: {
-        color: 'red',
+        color: '#ff3b30',
         marginTop: 4,
         fontSize: 12,
     },
@@ -247,6 +264,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 24,
+    },
+    loginButtonDisabled: {
+        backgroundColor: '#a8c7fa',
     },
     loginButtonText: {
         color: 'white',
