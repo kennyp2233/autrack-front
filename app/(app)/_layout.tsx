@@ -1,55 +1,42 @@
-import { Tabs } from 'expo-router';
-import { HomeIcon, CarIcon, WrenchIcon, BarChartIcon, SettingsIcon } from '@/components/ui/Icons';
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { Stack } from 'expo-router';
+import { useTheme } from '@/contexts/ThemeContext';
+import CustomBottomNav from '@/components/ui/CustomBottomNav';
 
 export default function AppLayout() {
-    return (
-        <Tabs screenOptions={{
-            headerShown: false,
-            tabBarActiveTintColor: '#3B82F6',
-            tabBarInactiveTintColor: 'gray',
-            tabBarStyle: {
-                paddingBottom: 5,
-                height: 60
-            }
-        }}>
-            <Tabs.Screen
-                name="index"
-                options={{
-                    title: 'Inicio',
-                    tabBarIcon: ({ color }) => <HomeIcon size={24} color={color} />
-                }}
-            />
-            <Tabs.Screen
-                name="vehicles"
-                options={{
-                    title: 'Vehículos',
-                    tabBarIcon: ({ color }) => <CarIcon size={24} color={color} />
-                }}
-            />
-            <Tabs.Screen
-                name="reports"
-                options={{
-                    title: 'Reportes',
-                    tabBarIcon: ({ color }) => <BarChartIcon size={24} color={color} />
-                }}
-            />
-            <Tabs.Screen
-                name="settings"
-                options={{
-                    title: 'Ajustes',
-                    tabBarIcon: ({ color }) => <SettingsIcon size={24} color={color} />
-                }}
-            />
+    const { theme } = useTheme();
 
-            {/* Ocultar otras pantallas de la navegación por pestañas */}
-            <Tabs.Screen name="profile" options={{ href: null }} />
-            <Tabs.Screen name="vehicles/[id]" options={{ href: null }} />
-            <Tabs.Screen name="vehicles/add" options={{ href: null }} />
-            <Tabs.Screen name="vehicles/[id]/edit" options={{ href: null }} />
-            <Tabs.Screen name="vehicles/[id]/maintenance" options={{ href: null }} />
-            <Tabs.Screen name="vehicles/[id]/maintenance/add" options={{ href: null }} />
-            <Tabs.Screen name="vehicles/[id]/maintenance/[id]" options={{ href: null }} />
-            <Tabs.Screen name="reports/export" options={{ href: null }} />
-        </Tabs>
+    return (
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+            {/* Stack navigator para todas las pantallas */}
+            <Stack screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: theme.background }
+            }}>
+                <Stack.Screen name="index" />
+                <Stack.Screen name="vehicles" />
+                <Stack.Screen name="vehicles/[id]" />
+                <Stack.Screen name="vehicles/add" />
+                <Stack.Screen name="vehicles/[id]/edit" />
+                <Stack.Screen name="vehicles/[id]/maintenance" />
+                <Stack.Screen name="vehicles/[id]/maintenance/add" />
+                <Stack.Screen name="vehicles/[id]/maintenance/[id]" />
+                <Stack.Screen name="reports" />
+                <Stack.Screen name="reports/export" />
+                <Stack.Screen name="settings" />
+                <Stack.Screen name="profile" />
+            </Stack>
+
+            {/* Barra de navegación personalizada */}
+            <CustomBottomNav />
+        </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        position: 'relative', // Importante para posicionar el CustomBottomNav
+    },
+});

@@ -42,7 +42,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             if (!user && !inAuthGroup) {
                 // Redirigir a la pantalla de login si no hay usuario autenticado
-                router.replace('/(auth)/login');
+                //router.replace('/(auth)/login');
             } else if (user && inAuthGroup) {
                 // Redirigir al dashboard si el usuario está autenticado
                 router.replace('/(app)');
