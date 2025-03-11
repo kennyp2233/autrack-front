@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, Platform, StatusBar } from 'react-native';
+import React, { useRef } from 'react';
+import { View, StyleSheet, Animated, Platform, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useVehicles } from '@/contexts/VehiclesContext';
 
@@ -10,9 +10,17 @@ import VehicleCarousel from '@/components/home/vehicle/VehicleCarousel';
 import MaintenanceList from '@/components/home/maintenance/MaintenanceList';
 import StatsSummary from '@/components/home/stats-summary/StatsSummaryt';
 
+// Definimos las alturas del header para mantener la consistencia
+const HEADER_MAX_HEIGHT = 150;
+const HEADER_MIN_HEIGHT = 70;
+const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
+
 export default function HomeScreen() {
     const router = useRouter();
     const { vehicles, maintenance } = useVehicles();
+
+    // Creamos una referencia para el valor de animación del scroll
+    const scrollY = useRef(new Animated.Value(0)).current;
 
     // Handle notification press
     const handleNotificationPress = () => {
@@ -30,22 +38,30 @@ export default function HomeScreen() {
         router.push(`/vehicles/${vehicleId}/maintenance/${maintenanceId}`);
     };
 
-    // Calculate header height for proper spacing
-    const headerHeight = Platform.OS === 'ios' ? 150 : (StatusBar.currentHeight || 0) + 130;
+    // Calculamos el padding dinámico basado en la altura del header
+    const paddingTop = Platform.OS === 'ios' ? HEADER_MAX_HEIGHT : HEADER_MAX_HEIGHT + (StatusBar.currentHeight || 0);
 
     return (
         <View style={styles.container}>
-            {/* Background Header */}
-            <HomeHeader onNotificationPress={handleNotificationPress} />
+            {/* Cabecera animada que recibe el valor de scroll */}
+            <HomeHeader
+                onNotificationPress={handleNotificationPress}
+                scrollY={scrollY}
+            />
 
-            {/* Main Content */}
-            <ScrollView
+            {/* ScrollView animado que actualiza el valor scrollY */}
+            <Animated.ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={[
                     styles.scrollContent,
-                    { paddingTop: headerHeight } // Dynamic padding based on header height
+                    { paddingTop }
                 ]}
                 showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16} // Importante: controla la frecuencia de actualización
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false } // Importante: algunos valores no se pueden animar con el driver nativo
+                )}
             >
                 {/* Vehicles Section */}
                 <SectionCard style={styles.vehiclesCard}>
@@ -74,7 +90,7 @@ export default function HomeScreen() {
 
                 {/* Bottom spacing to avoid content being hidden behind the bottom nav */}
                 <View style={styles.bottomSpacer} />
-            </ScrollView>
+            </Animated.ScrollView>
         </View>
     );
 }
@@ -86,14 +102,12 @@ const styles = StyleSheet.create({
     },
     scrollView: {
         flex: 1,
-        zIndex: 10, // Higher zIndex to ensure it's above the header
     },
     scrollContent: {
-        // We set paddingTop dynamically to account for header height
         paddingBottom: 20,
     },
     vehiclesCard: {
-        zIndex: 20, // Higher zIndex for this card
+        zIndex: 20,
     },
     vehiclesHeader: {
         marginBottom: 12,

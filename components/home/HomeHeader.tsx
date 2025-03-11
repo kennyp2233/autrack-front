@@ -1,14 +1,20 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Platform, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Platform, StatusBar, Animated } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface HomeHeaderProps {
     onNotificationPress?: () => void;
+    scrollY: Animated.Value;
 }
+
+const HEADER_MAX_HEIGHT = 150; // Altura máxima del header
+const HEADER_MIN_HEIGHT = 70; // Altura mínima del header (contraído)
+const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
 
 const HomeHeader: React.FC<HomeHeaderProps> = ({
     onNotificationPress,
+    scrollY
 }) => {
     const { user } = useAuth();
 
@@ -25,13 +31,77 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
         }
     };
 
+    // Animaciones basadas en el valor de scroll
+    const headerHeight = scrollY.interpolate({
+        inputRange: [0, HEADER_SCROLL_DISTANCE],
+        outputRange: [HEADER_MAX_HEIGHT, HEADER_MIN_HEIGHT],
+        extrapolate: 'clamp'
+    });
+
+    const headerOpacity = scrollY.interpolate({
+        inputRange: [0, HEADER_SCROLL_DISTANCE / 2, HEADER_SCROLL_DISTANCE],
+        outputRange: [1, 0.5, 0],
+        extrapolate: 'clamp'
+    });
+
+    const greetingOpacity = scrollY.interpolate({
+        inputRange: [0, HEADER_SCROLL_DISTANCE / 2, HEADER_SCROLL_DISTANCE],
+        outputRange: [1, 0, 0],
+        extrapolate: 'clamp'
+    });
+
+    const nameScale = scrollY.interpolate({
+        inputRange: [0, HEADER_SCROLL_DISTANCE],
+        outputRange: [1, 0.8],
+        extrapolate: 'clamp'
+    });
+
+    const nameTranslateY = scrollY.interpolate({
+        inputRange: [0, HEADER_SCROLL_DISTANCE],
+        outputRange: [0, -10],
+        extrapolate: 'clamp'
+    });
+
     return (
-        <View style={styles.headerContainer}>
+        <Animated.View
+            style={[
+                styles.headerContainer,
+                {
+                    height: headerHeight,
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    zIndex: 100,
+                }
+            ]}
+        >
             <SafeAreaView style={styles.safeArea}>
                 <View style={styles.headerContent}>
                     <View>
-                        <Text style={styles.greeting}>Buenos días</Text>
-                        <Text style={styles.userName}>{firstName}</Text>
+                        <Animated.Text
+                            style={[
+                                styles.greeting,
+                                {
+                                    opacity: greetingOpacity
+                                }
+                            ]}
+                        >
+                            Buenos días
+                        </Animated.Text>
+                        <Animated.Text
+                            style={[
+                                styles.userName,
+                                {
+                                    transform: [
+                                        { scale: nameScale },
+                                        { translateY: nameTranslateY }
+                                    ]
+                                }
+                            ]}
+                        >
+                            {firstName}
+                        </Animated.Text>
                     </View>
 
                     <TouchableOpacity
@@ -45,24 +115,20 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
-        </View>
+        </Animated.View>
     );
 };
 
 const styles = StyleSheet.create({
     headerContainer: {
-        position: 'absolute',  // Absolute position to be behind everything
-        top: 0,
-        left: 0,
-        right: 0,
         backgroundColor: '#333',
         borderBottomLeftRadius: 20,
         borderBottomRightRadius: 20,
-        paddingBottom: 60, // Extra space at the bottom for content overlap
-        zIndex: 1, // Lower zIndex to ensure it stays behind other components
+        overflow: 'hidden',
     },
     safeArea: {
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+        flex: 1,
     },
     headerContent: {
         flexDirection: 'row',
@@ -70,7 +136,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 20,
         paddingTop: 10,
-        paddingBottom: 15,
+        flex: 1,
     },
     greeting: {
         color: 'white',
@@ -80,6 +146,7 @@ const styles = StyleSheet.create({
     userName: {
         color: 'white',
         opacity: 0.9,
+        fontSize: 16,
     },
     notificationButton: {
         width: 40,
@@ -89,7 +156,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         position: 'relative',
-        zIndex: 2, // Higher zIndex to ensure the button is clickable
     },
     notificationBadge: {
         position: 'absolute',
