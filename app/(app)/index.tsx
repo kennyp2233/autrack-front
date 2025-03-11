@@ -1,122 +1,80 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, StyleSheet, ScrollView, Platform, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
-import { useAuth } from '@/contexts/AuthContext';
+import { useVehicles } from '@/contexts/VehiclesContext';
 
-// Datos de ejemplo
-const vehicles = [
-    { id: 1, brand: 'Toyota', model: 'Corolla', year: 2019, plate: 'ABC-123', mileage: 35000, lastMaintenance: '15/01/2025' },
-    { id: 2, brand: 'Honda', model: 'Civic', year: 2020, plate: 'XYZ-789', mileage: 28000, lastMaintenance: '02/02/2025' }
-];
+// Import custom components
+import HomeHeader from '@/components/home/HomeHeader';
+import SectionCard from '@/components/home/section-card/SectionCard';
+import VehicleCarousel from '@/components/home/vehicle/VehicleCarousel';
+import MaintenanceList from '@/components/home/maintenance/MaintenanceList';
+import StatsSummary from '@/components/home/stats-summary/StatsSummaryt';
 
-const upcomingMaintenance = [
-    { id: 1, vehicleId: 1, type: 'Cambio de Aceite', date: '01/03/2025', daysLeft: 3 },
-    { id: 2, vehicleId: 2, type: 'Revisión de Frenos', date: '15/03/2025', daysLeft: 15 },
-    { id: 3, vehicleId: 1, type: 'Rotación de Neumáticos', date: '20/03/2025', daysLeft: 20 }
-];
-
-export default function DashboardScreen() {
+export default function HomeScreen() {
     const router = useRouter();
-    const { user, logout } = useAuth();
+    const { vehicles, maintenance } = useVehicles();
 
-    // Función para obtener el nombre del vehículo por ID
-    const getVehicleName = (id: number) => {
-        const vehicle = vehicles.find(v => v.id === id);
-        return vehicle ? `${vehicle.brand} ${vehicle.model}` : '';
+    // Handle notification press
+    const handleNotificationPress = () => {
+        console.log('Notification button pressed');
     };
+
+    // Get vehicle name by id
+    const getVehicleName = (vehicleId: number) => {
+        const vehicle = vehicles.find(v => v.id === vehicleId);
+        return vehicle ? `${vehicle.brand} ${vehicle.model}` : 'Vehículo desconocido';
+    };
+
+    // Handle navigation to maintenance detail
+    const handleMaintenancePress = (vehicleId: number, maintenanceId: number) => {
+        router.push(`/vehicles/${vehicleId}/maintenance/${maintenanceId}`);
+    };
+
+    // Calculate header height for proper spacing
+    const headerHeight = Platform.OS === 'ios' ? 150 : (StatusBar.currentHeight || 0) + 130;
 
     return (
         <View style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-                <Text style={styles.title}>Mi Garaje</Text>
-                <TouchableOpacity onPress={logout}>
-                    <Feather name="bell" size={24} color="#000" />
-                </TouchableOpacity>
-            </View>
+            {/* Background Header */}
+            <HomeHeader onNotificationPress={handleNotificationPress} />
 
-            {/* Upcoming Maintenance Section */}
-            <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Próximos Mantenimientos</Text>
-                    <TouchableOpacity>
-                        <Text style={styles.seeAllText}>Ver todos</Text>
-                    </TouchableOpacity>
-                </View>
+            {/* Main Content */}
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={[
+                    styles.scrollContent,
+                    { paddingTop: headerHeight } // Dynamic padding based on header height
+                ]}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Vehicles Section */}
+                <SectionCard style={styles.vehiclesCard}>
+                    <View style={styles.vehiclesHeader}>
+                        <VehicleCarousel
+                            vehicles={vehicles}
+                            onViewAll={() => router.push('/vehicles')}
+                        />
+                    </View>
+                </SectionCard>
 
-                <FlatList
-                    data={upcomingMaintenance}
-                    keyExtractor={(item) => item.id.toString()}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity
-                            style={styles.maintenanceItem}
-                            onPress={() => router.push(`/vehicles/${item.vehicleId}`)}
-                        >
-                            <View>
-                                <Text style={styles.maintenanceType}>{item.type}</Text>
-                                <Text style={styles.maintenanceVehicle}>{getVehicleName(item.vehicleId)}</Text>
-                            </View>
-                            <View>
-                                <Text style={styles.maintenanceDate}>{item.date}</Text>
-                                <Text style={styles.maintenanceDays}>En {item.daysLeft} días</Text>
-                            </View>
-                        </TouchableOpacity>
-                    )}
-                    style={styles.list}
-                />
-            </View>
+                {/* Upcoming Maintenance Section */}
+                <SectionCard>
+                    <MaintenanceList
+                        maintenanceItems={maintenance.slice(0, 3)}
+                        getVehicleName={getVehicleName}
+                        onItemPress={handleMaintenancePress}
+                        onViewAll={() => router.push('/maintenance')}
+                    />
+                </SectionCard>
 
-            {/* Vehicles Section */}
-            <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Mis Vehículos</Text>
-                    <TouchableOpacity onPress={() => router.push('/vehicles')}>
-                        <Text style={styles.seeAllText}>Ver todos</Text>
-                    </TouchableOpacity>
-                </View>
+                {/* Statistics Summary */}
+                <SectionCard>
+                    <StatsSummary maintenanceItems={maintenance} />
+                </SectionCard>
 
-                <FlatList
-                    data={vehicles}
-                    keyExtractor={(item) => item.id.toString()}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity
-                            style={styles.vehicleItem}
-                            onPress={() => router.push(`/vehicles/${item.id}`)}
-                        >
-                            <View>
-                                <Text style={styles.vehicleName}>{item.brand} {item.model}</Text>
-                                <Text style={styles.vehicleDetails}>{item.year} • {item.plate}</Text>
-                            </View>
-                            <View>
-                                <Text style={styles.vehicleMileage}>{item.mileage} km</Text>
-                                <Text style={styles.vehicleLastMaintenance}>Últ. mant: {item.lastMaintenance}</Text>
-                            </View>
-                        </TouchableOpacity>
-                    )}
-                    style={styles.list}
-                />
-
-                <TouchableOpacity
-                    style={styles.addButton}
-                    onPress={() => router.push('/vehicles/add')}
-                >
-                    <Feather name="plus" size={20} color="#fff" />
-                    <Text style={styles.addButtonText}>Agregar Vehículo</Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Maintenance Stats */}
-            <View style={styles.statsContainer}>
-                <View style={styles.statItem}>
-                    <Text style={styles.statValue}>5</Text>
-                    <Text style={styles.statLabel}>Mantenimientos Totales</Text>
-                </View>
-                <View style={styles.statItem}>
-                    <Text style={styles.statValue}>$350</Text>
-                    <Text style={styles.statLabel}>Promedio de Gastos</Text>
-                </View>
-            </View>
+                {/* Bottom spacing to avoid content being hidden behind the bottom nav */}
+                <View style={styles.bottomSpacer} />
+            </ScrollView>
         </View>
     );
 }
@@ -124,122 +82,23 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
         backgroundColor: '#f5f5f5',
     },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 20,
-        marginTop: 10,
+    scrollView: {
+        flex: 1,
+        zIndex: 10, // Higher zIndex to ensure it's above the header
     },
-    title: {
-        fontSize: 22,
-        fontWeight: 'bold',
+    scrollContent: {
+        // We set paddingTop dynamically to account for header height
+        paddingBottom: 20,
     },
-    section: {
-        marginBottom: 20,
-        backgroundColor: 'white',
-        borderRadius: 8,
-        padding: 16,
+    vehiclesCard: {
+        zIndex: 20, // Higher zIndex for this card
     },
-    sectionHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+    vehiclesHeader: {
         marginBottom: 12,
     },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    seeAllText: {
-        color: '#3B82F6',
-    },
-    list: {
-        marginBottom: 10,
-    },
-    maintenanceItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    maintenanceType: {
-        fontWeight: 'bold',
-    },
-    maintenanceVehicle: {
-        color: '#666',
-        fontSize: 12,
-        marginTop: 4,
-    },
-    maintenanceDate: {
-        textAlign: 'right',
-    },
-    maintenanceDays: {
-        color: '#666',
-        fontSize: 12,
-        textAlign: 'right',
-        marginTop: 4,
-    },
-    vehicleItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    vehicleName: {
-        fontWeight: 'bold',
-    },
-    vehicleDetails: {
-        color: '#666',
-        fontSize: 12,
-        marginTop: 4,
-    },
-    vehicleMileage: {
-        textAlign: 'right',
-    },
-    vehicleLastMaintenance: {
-        color: '#666',
-        fontSize: 12,
-        textAlign: 'right',
-        marginTop: 4,
-    },
-    addButton: {
-        backgroundColor: '#3B82F6',
-        borderRadius: 8,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingVertical: 12,
-        marginTop: 10,
-    },
-    addButtonText: {
-        color: 'white',
-        fontWeight: '500',
-        marginLeft: 8,
-    },
-    statsContainer: {
-        flexDirection: 'row',
-        backgroundColor: 'white',
-        borderRadius: 8,
-        padding: 16,
-    },
-    statItem: {
-        flex: 1,
-        alignItems: 'center',
-    },
-    statValue: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#3B82F6',
-    },
-    statLabel: {
-        color: '#666',
-        fontSize: 12,
-        marginTop: 4,
+    bottomSpacer: {
+        height: 80, // Adjust based on your bottom nav height
     },
 });
