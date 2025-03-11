@@ -8,11 +8,13 @@ import VehicleCard from './VehicleCard';
 interface VehicleCarouselProps {
     vehicles: Vehicle[];
     onViewAll: () => void;
+    theme?: any; // Tipo del tema
 }
 
 const VehicleCarousel: React.FC<VehicleCarouselProps> = ({
     vehicles,
-    onViewAll
+    onViewAll,
+    theme
 }) => {
     const router = useRouter();
     const [activeIndex, setActiveIndex] = useState(0);
@@ -38,14 +40,18 @@ const VehicleCarousel: React.FC<VehicleCarouselProps> = ({
     // If no vehicles available
     if (vehicles.length === 0) {
         return (
-            <View style={styles.emptyVehicle}>
-                <Feather name="truck" size={40} color="#999" />
-                <Text style={styles.emptyText}>No tienes vehículos registrados</Text>
+            <View style={[styles.emptyVehicle, { backgroundColor: theme?.card || 'white' }]}>
+                <Feather name="truck" size={40} color={theme?.secondaryText || "#999"} />
+                <Text style={[styles.emptyText, { color: theme?.secondaryText || "#666" }]}>
+                    No tienes vehículos registrados
+                </Text>
                 <TouchableOpacity
-                    style={styles.addButton}
+                    style={[styles.addButton, { backgroundColor: theme?.primary || "#3B82F6" }]}
                     onPress={() => router.push('/vehicles/add')}
                 >
-                    <Text style={styles.addButtonText}>Agregar Vehículo</Text>
+                    <Text style={[styles.addButtonText, { color: theme?.navbarText || "white" }]}>
+                        Agregar Vehículo
+                    </Text>
                 </TouchableOpacity>
             </View>
         );
@@ -59,7 +65,8 @@ const VehicleCarousel: React.FC<VehicleCarouselProps> = ({
             <TouchableOpacity
                 style={[
                     styles.navButton,
-                    activeIndex === 0 && styles.navButtonDisabled
+                    activeIndex === 0 && styles.navButtonDisabled,
+                    { backgroundColor: theme?.card || 'white' }
                 ]}
                 onPress={handlePrevVehicle}
                 disabled={activeIndex === 0}
@@ -67,19 +74,21 @@ const VehicleCarousel: React.FC<VehicleCarouselProps> = ({
                 <Feather
                     name="chevron-left"
                     size={24}
-                    color={activeIndex === 0 ? "#ccc" : "#333"}
+                    color={activeIndex === 0 ? (theme?.border || "#ccc") : (theme?.text || "#333")}
                 />
             </TouchableOpacity>
 
             <VehicleCard
                 vehicle={currentVehicle}
                 onPress={handleVehiclePress}
+                theme={theme}
             />
 
             <TouchableOpacity
                 style={[
                     styles.navButton,
-                    activeIndex === vehicles.length - 1 && styles.navButtonDisabled
+                    activeIndex === vehicles.length - 1 && styles.navButtonDisabled,
+                    { backgroundColor: theme?.card || 'white' }
                 ]}
                 onPress={handleNextVehicle}
                 disabled={activeIndex === vehicles.length - 1}
@@ -87,7 +96,7 @@ const VehicleCarousel: React.FC<VehicleCarouselProps> = ({
                 <Feather
                     name="chevron-right"
                     size={24}
-                    color={activeIndex === vehicles.length - 1 ? "#ccc" : "#333"}
+                    color={activeIndex === vehicles.length - 1 ? (theme?.border || "#ccc") : (theme?.text || "#333")}
                 />
             </TouchableOpacity>
         </View>
@@ -103,7 +112,6 @@ const styles = StyleSheet.create({
         width: 32,
         height: 32,
         borderRadius: 16,
-        backgroundColor: 'white',
         justifyContent: 'center',
         alignItems: 'center',
         // Shadow for the button
@@ -121,18 +129,15 @@ const styles = StyleSheet.create({
         padding: 24,
     },
     emptyText: {
-        color: '#666',
         marginVertical: 8,
     },
     addButton: {
-        backgroundColor: '#3B82F6',
         paddingVertical: 8,
         paddingHorizontal: 16,
         borderRadius: 8,
         marginTop: 8,
     },
     addButtonText: {
-        color: 'white',
         fontWeight: 'bold',
     },
 });

@@ -7,6 +7,7 @@ interface MaintenanceListProps {
     getVehicleName: (vehicleId: number) => string;
     onItemPress: (vehicleId: number, maintenanceId: number) => void;
     onViewAll?: () => void;
+    theme?: any; // Tipo del tema
 }
 
 const MaintenanceList: React.FC<MaintenanceListProps> = ({
@@ -14,11 +15,14 @@ const MaintenanceList: React.FC<MaintenanceListProps> = ({
     getVehicleName,
     onItemPress,
     onViewAll,
+    theme
 }) => {
     if (maintenanceItems.length === 0) {
         return (
             <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>No hay mantenimientos programados</Text>
+                <Text style={[styles.emptyText, { color: theme?.secondaryText || '#666' }]}>
+                    No hay mantenimientos programados
+                </Text>
             </View>
         );
     }
@@ -26,10 +30,14 @@ const MaintenanceList: React.FC<MaintenanceListProps> = ({
     return (
         <View>
             <View style={styles.header}>
-                <Text style={styles.title}>Próximos Mantenimientos</Text>
+                <Text style={[styles.title, { color: theme?.text || '#333' }]}>
+                    Próximos Mantenimientos
+                </Text>
                 {onViewAll && (
                     <TouchableOpacity onPress={onViewAll}>
-                        <Text style={styles.viewAllText}>Ver todos</Text>
+                        <Text style={[styles.viewAllText, { color: theme?.primary || '#3B82F6' }]}>
+                            Ver todos
+                        </Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -37,16 +45,24 @@ const MaintenanceList: React.FC<MaintenanceListProps> = ({
             {maintenanceItems.map((item) => (
                 <TouchableOpacity
                     key={item.id}
-                    style={styles.maintenanceItem}
+                    style={[styles.maintenanceItem, { borderBottomColor: theme?.border || '#eee' }]}
                     onPress={() => onItemPress(item.vehicleId, item.id)}
                 >
                     <View style={styles.maintenanceInfo}>
-                        <Text style={styles.maintenanceType}>{item.type}</Text>
-                        <Text style={styles.maintenanceVehicle}>{getVehicleName(item.vehicleId)}</Text>
+                        <Text style={[styles.maintenanceType, { color: theme?.text || '#333' }]}>
+                            {item.type}
+                        </Text>
+                        <Text style={[styles.maintenanceVehicle, { color: theme?.secondaryText || '#666' }]}>
+                            {getVehicleName(item.vehicleId)}
+                        </Text>
                     </View>
                     <View style={styles.maintenanceDate}>
-                        <Text style={styles.maintenanceDateText}>{item.date}</Text>
-                        <Text style={styles.maintenanceDaysLeft}>Próximamente</Text>
+                        <Text style={[styles.maintenanceDateText, { color: theme?.text || '#333' }]}>
+                            {item.date}
+                        </Text>
+                        <Text style={[styles.maintenanceDaysLeft, { color: theme?.secondaryText || '#666' }]}>
+                            Próximamente
+                        </Text>
                     </View>
                 </TouchableOpacity>
             ))}
@@ -64,10 +80,8 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: '#333',
     },
     viewAllText: {
-        color: '#3B82F6',
         fontSize: 14,
     },
     maintenanceItem: {
@@ -75,7 +89,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingVertical: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
     },
     maintenanceInfo: {
         flex: 1,
@@ -83,10 +96,8 @@ const styles = StyleSheet.create({
     maintenanceType: {
         fontWeight: 'bold',
         fontSize: 14,
-        color: '#333',
     },
     maintenanceVehicle: {
-        color: '#666',
         fontSize: 12,
         marginTop: 4,
     },
@@ -96,10 +107,8 @@ const styles = StyleSheet.create({
     maintenanceDateText: {
         fontWeight: '500',
         fontSize: 14,
-        color: '#333',
     },
     maintenanceDaysLeft: {
-        color: '#666',
         fontSize: 12,
         marginTop: 4,
     },

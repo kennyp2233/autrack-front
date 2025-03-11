@@ -6,9 +6,10 @@ import { Vehicle } from '@/types/Vehicle';
 interface VehicleCardProps {
     vehicle: Vehicle;
     onPress: (id: number) => void;
+    theme?: any; // Tipo del tema
 }
 
-const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onPress }) => {
+const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onPress, theme }) => {
     return (
         <TouchableOpacity
             style={styles.container}
@@ -16,35 +17,60 @@ const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onPress }) => {
             activeOpacity={0.9}
         >
             <View>
-                <Text style={styles.name}>
+                <Text style={[styles.name, { color: theme?.text || '#333' }]}>
                     {vehicle.brand} {vehicle.model}
                 </Text>
-                <Text style={styles.year}>{vehicle.year}</Text>
+                <Text style={[styles.year, { color: theme?.secondaryText || '#666' }]}>
+                    {vehicle.year}
+                </Text>
             </View>
 
             {/* Car Image - using an icon for now */}
             <View style={styles.imageContainer}>
-                <Feather name="truck" size={60} color="#000" style={styles.image} />
+                <Feather
+                    name="truck"
+                    size={60}
+                    color={theme?.text || "#000"}
+                    style={[styles.image, { opacity: theme?.isDark ? 0.6 : 0.7 }]}
+                />
             </View>
 
             <View style={styles.statsRow}>
                 <View style={styles.stat}>
-                    <Text style={styles.statLabel}>Kilometraje</Text>
-                    <Text style={styles.statValue}>{vehicle.mileage}km</Text>
+                    <Text style={[styles.statLabel, { color: theme?.secondaryText || '#666' }]}>
+                        Kilometraje
+                    </Text>
+                    <Text style={[styles.statValue, { color: theme?.text || '#333' }]}>
+                        {vehicle.mileage}km
+                    </Text>
                 </View>
 
                 <View style={styles.stat}>
-                    <Text style={styles.statLabel}>Último servicio</Text>
-                    <Text style={styles.statValue}>{vehicle.lastMaintenance || 'No registrado'}</Text>
+                    <Text style={[styles.statLabel, { color: theme?.secondaryText || '#666' }]}>
+                        Último servicio
+                    </Text>
+                    <Text style={[styles.statValue, { color: theme?.text || '#333' }]}>
+                        {vehicle.lastMaintenance || 'No registrado'}
+                    </Text>
                 </View>
             </View>
 
             <View style={styles.statusContainer}>
-                <Text style={styles.statusLabel}>Estado general</Text>
-                <View style={styles.progressBar}>
-                    <View style={[styles.progressFill, { width: '85%' }]} />
+                <Text style={[styles.statusLabel, { color: theme?.secondaryText || '#666' }]}>
+                    Estado general
+                </Text>
+                <View style={[styles.progressBar, { backgroundColor: theme?.progressBarBackground || '#E5E7EB' }]}>
+                    <View style={[
+                        styles.progressFill,
+                        {
+                            width: '85%',
+                            backgroundColor: theme?.success || '#4CAF50'
+                        }
+                    ]} />
                 </View>
-                <Text style={styles.statusPercent}>85%</Text>
+                <Text style={[styles.statusPercent, { color: theme?.secondaryText || '#666' }]}>
+                    85%
+                </Text>
             </View>
         </TouchableOpacity>
     );
@@ -58,11 +84,9 @@ const styles = StyleSheet.create({
     name: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: '#333',
     },
     year: {
         fontSize: 14,
-        color: '#666',
     },
     imageContainer: {
         alignItems: 'center',
@@ -83,34 +107,28 @@ const styles = StyleSheet.create({
     },
     statLabel: {
         fontSize: 12,
-        color: '#666',
     },
     statValue: {
         fontSize: 14,
         fontWeight: 'bold',
-        color: '#333',
     },
     statusContainer: {
         marginTop: 4,
     },
     statusLabel: {
         fontSize: 12,
-        color: '#666',
     },
     progressBar: {
         height: 4,
-        backgroundColor: '#E5E7EB',
         borderRadius: 2,
         marginVertical: 4,
     },
     progressFill: {
         height: 4,
-        backgroundColor: '#4CAF50',
         borderRadius: 2,
     },
     statusPercent: {
         fontSize: 12,
-        color: '#666',
         textAlign: 'right',
     },
 });

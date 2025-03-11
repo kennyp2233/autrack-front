@@ -17,7 +17,6 @@ const SectionCard: React.FC<SectionCardProps> = ({ children, style }) => {
 const styles = StyleSheet.create({
     container: {
         marginVertical: 8,
-        backgroundColor: 'white',
         borderRadius: 16,
         padding: 16,
         // Sombra para dar profundidad

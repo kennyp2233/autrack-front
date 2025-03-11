@@ -1,7 +1,8 @@
 import React, { useRef } from 'react';
-import { View, StyleSheet, Animated, Platform, StatusBar } from 'react-native';
+import { View, StyleSheet, Animated, Platform, StatusBar, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useVehicles } from '@/contexts/VehiclesContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // Import custom components
 import HomeHeader from '@/components/home/HomeHeader';
@@ -14,10 +15,12 @@ import StatsSummary from '@/components/home/stats-summary/StatsSummaryt';
 const HEADER_MAX_HEIGHT = 220;
 const HEADER_MIN_HEIGHT = 80;
 const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
+const NAVBAR_HEIGHT = 80; // Altura del navbar según CustomBottomNav.tsx
 
 export default function HomeScreen() {
     const router = useRouter();
     const { vehicles, maintenance } = useVehicles();
+    const { theme, isDark } = useTheme();
 
     // Creamos una referencia para el valor de animación del scroll
     const scrollY = useRef(new Animated.Value(0)).current;
@@ -45,11 +48,12 @@ export default function HomeScreen() {
         : HEADER_MAX_HEIGHT - 60 + (StatusBar.currentHeight || 0); // Android con StatusBar
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Cabecera animada que se sitúa debajo del contenido */}
             <HomeHeader
                 onNotificationPress={handleNotificationPress}
                 scrollY={scrollY}
+                theme={theme}
             />
 
             {/* ScrollView animado que actualiza el valor scrollY */}
@@ -57,7 +61,8 @@ export default function HomeScreen() {
                 style={styles.scrollView}
                 contentContainerStyle={[
                     styles.scrollContent,
-                    { paddingTop }
+                    { paddingTop },
+                    { paddingBottom: NAVBAR_HEIGHT + 20 } // Añadimos espacio para el navbar
                 ]}
                 showsVerticalScrollIndicator={false}
                 scrollEventThrottle={16} // Importante: controla la frecuencia de actualización
@@ -67,32 +72,39 @@ export default function HomeScreen() {
                 )}
             >
                 {/* Vehicles Section - Con elevación para que se vea sobre el header */}
-                <SectionCard style={styles.vehiclesCard}>
+                <SectionCard
+                    style={[
+                        styles.vehiclesCard,
+                        { backgroundColor: theme.card }
+                    ]}
+                >
                     <View style={styles.vehiclesHeader}>
                         <VehicleCarousel
                             vehicles={vehicles}
                             onViewAll={() => router.push('/vehicles')}
+                            theme={theme}
                         />
                     </View>
                 </SectionCard>
 
                 {/* Upcoming Maintenance Section */}
-                <SectionCard>
+                <SectionCard style={{ backgroundColor: theme.card }}>
                     <MaintenanceList
                         maintenanceItems={maintenance.slice(0, 3)}
                         getVehicleName={getVehicleName}
                         onItemPress={handleMaintenancePress}
                         onViewAll={() => router.push('/maintenance')}
+                        theme={theme}
                     />
                 </SectionCard>
 
                 {/* Statistics Summary */}
-                <SectionCard>
-                    <StatsSummary maintenanceItems={maintenance} />
+                <SectionCard style={{ backgroundColor: theme.card }}>
+                    <StatsSummary
+                        maintenanceItems={maintenance}
+                        theme={theme}
+                    />
                 </SectionCard>
-
-                {/* Bottom spacing to avoid content being hidden behind the bottom nav */}
-                <View style={styles.bottomSpacer} />
             </Animated.ScrollView>
         </View>
     );
@@ -101,7 +113,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
     },
     scrollView: {
         flex: 1,
@@ -109,7 +120,6 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         paddingHorizontal: 16,
-        paddingBottom: 20,
     },
     vehiclesCard: {
         marginTop: 0,
@@ -123,8 +133,5 @@ const styles = StyleSheet.create({
     },
     vehiclesHeader: {
         marginBottom: 12,
-    },
-    bottomSpacer: {
-        height: 80, // Ajustar según la altura de tu bottom nav
     },
 });

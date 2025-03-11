@@ -1,49 +1,53 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useColorScheme } from 'react-native';
 
-// Define theme colors
+// Define theme colors para coincidir con el diseño mostrado en la imagen
 export const lightTheme = {
-    primary: '#3B82F6', // Blue color from the app
-    background: '#FFFFFF',
+    primary: '#333333', // Color oscuro para el header
+    background: '#F5F5F5', // Color de fondo gris claro
     card: '#FFFFFF',
-    text: '#1F2937',
-    secondaryText: '#6B7280',
+    text: '#333333', // Texto principal oscuro
+    secondaryText: '#666666', // Texto secundario gris
     border: '#E5E7EB',
-    notification: '#EF4444',
-    success: '#10B981',
-    warning: '#F59E0B',
-    urgent: '#EF4444',
-    scheduled: '#F59E0B',
-    completed: '#10B981',
-    iconBackground: '#EBF5FF',
-    progressBarBackground: '#E5E7EB',
-    progressBarFill: '#10B981',
-    tabBarActive: '#3B82F6',
-    tabBarInactive: '#9CA3AF',
-    navbarBackground: '#1F2937',
-    navbarText: '#FFFFFF',
+    notification: '#F24E1E', // Color rojo para notificaciones
+    success: '#4CAF50', // Verde para barras de progreso/éxito
+    warning: '#FFC107', // Amarillo para alertas moderadas/advertencias
+    urgent: '#F24E1E', // Rojo para alertas urgentes
+    scheduled: '#FFC107', // Amarillo para eventos programados
+    completed: '#4CAF50', // Verde para completados
+    iconBackground: '#FFFFFF', // Fondo de iconos blanco
+    progressBarBackground: '#E5E7EB', // Fondo de barra de progreso gris claro
+    progressBarFill: '#4CAF50', // Relleno de barra de progreso verde
+    tabBarActive: '#9D8B70', // Color activo de tab bar beige/marrón claro
+    tabBarInactive: '#AEAEAE', // Color inactivo de tab bar gris
+    navbarBackground: '#FFFFFF', // Fondo de navbar blanco
+    navbarText: '#B5A48A', // Texto de navbar en color beige/marrón más claro
+    buttonPrimary: '#9D8B70', // Color de botón primario beige/marrón
+    buttonSecondary: '#E5E7EB', // Color de botón secundario gris claro
 };
 
 export const darkTheme = {
-    primary: '#60A5FA', // Lighter blue for dark theme
-    background: '#111827',
-    card: '#1F2937',
-    text: '#F9FAFB',
-    secondaryText: '#9CA3AF',
-    border: '#374151',
-    notification: '#F87171',
-    success: '#34D399',
-    warning: '#FBBF24',
-    urgent: '#F87171',
-    scheduled: '#FBBF24',
-    completed: '#34D399',
-    iconBackground: '#374151',
-    progressBarBackground: '#374151',
-    progressBarFill: '#34D399',
-    tabBarActive: '#60A5FA',
-    tabBarInactive: '#6B7280',
-    navbarBackground: '#111827',
-    navbarText: '#F9FAFB',
+    primary: '#1A1A24', // Un color más oscuro para el header, menos azulado
+    background: '#121218', // Fondo oscuro con un toque gris
+    card: '#222230', // Color de tarjeta un poco más claro que el fondo
+    text: '#FFFFFF', // Texto principal blanco
+    secondaryText: '#B0B0B0', // Texto secundario gris claro
+    border: '#2D2D3A', // Bordes sutilmente visibles
+    notification: '#FF6B6B', // Rojo vibrante para notificaciones
+    success: '#4ECB71', // Verde más vibrante 
+    warning: '#FFC857', // Amarillo más vibrante
+    urgent: '#FF6B6B', // Rojo para alertas urgentes
+    scheduled: '#FFC857', // Amarillo para programados
+    completed: '#4ECB71', // Verde para completados
+    iconBackground: '#2D2D3A', // Fondo de iconos ligeramente más claro
+    progressBarBackground: '#2D2D3A', // Fondo de barra ligeramente visible
+    progressBarFill: '#4ECB71', // Verde vibrante para progreso
+    tabBarActive: '#D4C5A9', // Versión más clara del beige/marrón para mejor visibilidad
+    tabBarInactive: '#8C8C8C', // Gris medio para elementos inactivos
+    navbarBackground: '#1A1A24', // Fondo de navbar consistente
+    navbarText: '#D4C5A9', // Texto en color beige/marrón más claro
+    buttonPrimary: '#D4C5A9', // Color de botón primario más claro
+    buttonSecondary: '#2D2D3A', // Color de botón secundario
 };
 
 // Create the theme context

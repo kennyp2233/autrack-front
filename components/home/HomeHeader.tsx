@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 interface HomeHeaderProps {
     onNotificationPress?: () => void;
     scrollY: Animated.Value;
+    theme: any; // Usamos any por ahora, idealmente definiríamos el tipo ThemeType
 }
 
 // Aumentamos la altura máxima para que el contenido se sobreponga
@@ -15,7 +16,8 @@ const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
 
 const HomeHeader: React.FC<HomeHeaderProps> = ({
     onNotificationPress,
-    scrollY
+    scrollY,
+    theme
 }) => {
     const { user } = useAuth();
 
@@ -76,7 +78,8 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                 {
                     height: headerHeight,
                     opacity: headerOpacity,
-                    transform: [{ scale: headerScale }]
+                    transform: [{ scale: headerScale }],
+                    backgroundColor: theme.primary,
                 }
             ]}
         >
@@ -87,7 +90,8 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                             style={[
                                 styles.greeting,
                                 {
-                                    opacity: greetingOpacity
+                                    opacity: greetingOpacity,
+                                    color: theme.navbarText
                                 }
                             ]}
                         >
@@ -100,7 +104,8 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                                     transform: [
                                         { scale: nameScale },
                                         { translateY: nameTranslateY }
-                                    ]
+                                    ],
+                                    color: theme.navbarText
                                 }
                             ]}
                         >
@@ -109,12 +114,12 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                     </View>
 
                     <TouchableOpacity
-                        style={styles.notificationButton}
+                        style={[styles.notificationButton, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}
                         onPress={handleNotificationPress}
                     >
-                        <Feather name="bell" size={24} color="white" />
-                        <View style={styles.notificationBadge}>
-                            <Text style={styles.notificationBadgeText}>2</Text>
+                        <Feather name="bell" size={24} color={theme.navbarText} />
+                        <View style={[styles.notificationBadge, { backgroundColor: theme.notification }]}>
+                            <Text style={[styles.notificationBadgeText, { color: theme.navbarText }]}>2</Text>
                         </View>
                     </TouchableOpacity>
                 </View>
@@ -125,7 +130,6 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
 
 const styles = StyleSheet.create({
     headerContainer: {
-        backgroundColor: '#3B82F6',
         borderBottomLeftRadius: 30,
         borderBottomRightRadius: 30,
         overflow: 'hidden',
@@ -155,13 +159,11 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     greeting: {
-        color: 'white',
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 4,
     },
     userName: {
-        color: 'white',
         opacity: 0.9,
         fontSize: 18,
     },
@@ -169,7 +171,6 @@ const styles = StyleSheet.create({
         width: 42,
         height: 42,
         borderRadius: 21,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
         justifyContent: 'center',
         alignItems: 'center',
         position: 'relative',
@@ -181,14 +182,12 @@ const styles = StyleSheet.create({
         width: 18,
         height: 18,
         borderRadius: 9,
-        backgroundColor: '#ff3b30',
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
         borderColor: 'white',
     },
     notificationBadgeText: {
-        color: 'white',
         fontSize: 10,
         fontWeight: 'bold',
     },

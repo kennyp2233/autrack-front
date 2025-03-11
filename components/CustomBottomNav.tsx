@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Platform } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { HomeIcon, CarIcon, BarChartIcon, SettingsIcon } from '@/components/ui/Icons';
@@ -12,11 +12,13 @@ const routes = [
     { name: 'settings', path: '/settings' as const, label: 'Ajustes', icon: SettingsIcon }
 ];
 
+// Altura base del navbar (sin contar la SafeArea)
+const BASE_NAVBAR_HEIGHT = 65;
+
 const CustomBottomNav = () => {
     const router = useRouter();
     const pathname = usePathname();
-
-    const { theme } = useTheme();
+    const { theme, isDark } = useTheme();
 
     // Determinar qué ruta está activa
     const getIsActive = (path: string) => {
@@ -52,35 +54,59 @@ const CustomBottomNav = () => {
     }
 
     return (
-        <View style={styles.container}>
-            <View style={styles.navContent}>
-                {routes.map((route) => {
-                    const isActive = getIsActive(route.path);
-                    const Icon = route.icon;
-                    return (
-                        <TouchableOpacity
-                            key={route.name}
-                            style={styles.tabButton}
-                            onPress={() => router.push(route.path as any)}
-                            accessibilityRole="button"
-                            accessibilityLabel={route.label}
-                            accessibilityState={{ selected: isActive }}
-                        >
-                            <Icon
-                                size={24}
-                                color={isActive ? theme.tabBarActive : theme.tabBarInactive}
-                            />
-                            <Text style={[
-                                styles.tabLabel,
-                                { color: isActive ? '#9D8B70' : '#AEAEAE' }
-                            ]}>
-                                {route.label}
-                            </Text>
-                            {isActive && <View style={styles.indicator} />}
-                        </TouchableOpacity>
-                    );
-                })}
-            </View>
+        <View style={[
+            styles.container,
+            {
+                backgroundColor: 'transparent',
+            }
+        ]}>
+            <SafeAreaView style={[
+                styles.safeAreaContainer,
+                {
+                    backgroundColor: theme.card
+                }
+            ]}>
+                <View style={[
+                    styles.navContent,
+                    {
+                        backgroundColor: theme.card,
+                    }
+                ]}>
+                    {routes.map((route) => {
+                        const isActive = getIsActive(route.path);
+                        const Icon = route.icon;
+                        return (
+                            <TouchableOpacity
+                                key={route.name}
+                                style={styles.tabButton}
+                                onPress={() => router.push(route.path as any)}
+                                accessibilityRole="button"
+                                accessibilityLabel={route.label}
+                                accessibilityState={{ selected: isActive }}
+                            >
+                                <Icon
+                                    size={24}
+                                    color={isActive ? theme.tabBarActive : theme.tabBarInactive}
+                                />
+                                <Text style={[
+                                    styles.tabLabel,
+                                    {
+                                        color: isActive ? theme.tabBarActive : theme.tabBarInactive
+                                    }
+                                ]}>
+                                    {route.label}
+                                </Text>
+                                {isActive && <View style={[
+                                    styles.indicator,
+                                    {
+                                        backgroundColor: theme.tabBarActive
+                                    }
+                                ]} />}
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+            </SafeAreaView>
         </View>
     );
 };
@@ -91,20 +117,22 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: 'transparent',
+        zIndex: 100,
     },
-    navContent: {
-        flexDirection: 'row',
-        height: 80,
-        backgroundColor: 'white',
-        borderRadius: 24,
+    safeAreaContainer: {
+        // Para asegurar que la SafeArea funcione correctamente en iOS
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        overflow: 'hidden',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: -2 },
         shadowOpacity: 0.1,
         shadowRadius: 8,
         elevation: 5,
-        paddingBottom: 15,
-
+    },
+    navContent: {
+        flexDirection: 'row',
+        height: BASE_NAVBAR_HEIGHT,
     },
     tabButton: {
         flex: 1,
@@ -121,7 +149,6 @@ const styles = StyleSheet.create({
         bottom: 0,
         width: 24,
         height: 3,
-        backgroundColor: '#9D8B70',
         borderRadius: 1.5,
         marginBottom: 5,
     },
