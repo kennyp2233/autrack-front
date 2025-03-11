@@ -1,80 +1,77 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
 import { HomeIcon, CarIcon, BarChartIcon, SettingsIcon } from '@/components/ui/Icons';
 import { useTheme } from '@/contexts/ThemeContext';
 
+// Definición mejorada de rutas con patrones para identificar pantallas hijas
 const routes = [
-    { name: 'index', path: '/' as const, label: 'Inicio', icon: HomeIcon },
-    { name: 'vehicles', path: '/vehicles' as const, label: 'Vehículos', icon: CarIcon },
-    { name: 'reports', path: '/reports' as const, label: 'Reportes', icon: BarChartIcon },
-    { name: 'settings', path: '/settings' as const, label: 'Ajustes', icon: SettingsIcon }
+    {
+        name: 'home',
+        path: '/',
+        label: 'Inicio',
+        icon: HomeIcon,
+        // Patrón para identificar cuando esta ruta está activa
+        pattern: /^\/$/
+    },
+    {
+        name: 'vehicles',
+        path: '/vehicles',
+        label: 'Vehículos',
+        icon: CarIcon,
+        // Patrón para identificar cuando cualquier subruta de vehículos está activa
+        pattern: /^\/vehicles($|\/)/
+    },
+    {
+        name: 'reports',
+        path: '/reports',
+        label: 'Reportes',
+        icon: BarChartIcon,
+        pattern: /^\/reports($|\/)/
+    },
+    {
+        name: 'settings',
+        path: '/settings',
+        label: 'Ajustes',
+        icon: SettingsIcon,
+        pattern: /^\/settings($|\/)/
+    }
 ];
 
-// Altura base del navbar (sin contar la SafeArea)
+// Lista de rutas específicas donde la barra de navegación debe ocultarse
+const hiddenPaths = [
+    /^\/profile$/,
+    /^\/vehicles\/add$/,
+    /^\/vehicles\/\d+$/,
+    /^\/vehicles\/\d+\/edit$/,
+    /^\/vehicles\/\d+\/maintenance($|\/)/,
+    /^\/reports\/export$/
+];
+
+// Altura base del navbar
 const BASE_NAVBAR_HEIGHT = 65;
 
 const CustomBottomNav = () => {
     const router = useRouter();
     const pathname = usePathname();
-    const { theme, isDark } = useTheme();
+    const { theme } = useTheme();
 
-    // Determinar qué ruta está activa
-    const getIsActive = (path: string) => {
-        if (path === '/' && pathname === '/') return true;
-        if (path !== '/' && pathname.startsWith(path)) return true;
-        return false;
-    };
-
-    // Rutas que no deben mostrar el bottom nav
-    const hiddenRoutes = [
-        '/profile',
-        '/vehicles/add',
-        '/vehicles/[id]',
-        '/vehicles/[id]/edit',
-        '/vehicles/[id]/maintenance',
-        '/vehicles/[id]/maintenance/add',
-        '/vehicles/[id]/maintenance/[id]',
-        '/reports/export'
-    ];
-
-    // Verificar si debemos ocultar la barra de navegación
-    const shouldHideNav = hiddenRoutes.some(route => {
-        if (route.includes('[id]')) {
-            const pattern = route.replace(/\[\w+\]/g, '[^/]+');
-            const regex = new RegExp(`^${pattern}$`);
-            return regex.test(pathname);
-        }
-        return pathname === route;
-    });
+    // Comprobar si la barra de navegación debe ocultarse en la ruta actual
+    const shouldHideNav = hiddenPaths.some(pattern => pattern.test(pathname));
 
     if (shouldHideNav) {
         return null;
     }
 
     return (
-        <View style={[
-            styles.container,
-            {
-                backgroundColor: 'transparent',
-            }
-        ]}>
-            <SafeAreaView style={[
-                styles.safeAreaContainer,
-                {
-                    backgroundColor: theme.card
-                }
-            ]}>
-                <View style={[
-                    styles.navContent,
-                    {
-                        backgroundColor: theme.card,
-                    }
-                ]}>
+        <View style={[styles.container, { backgroundColor: 'transparent' }]}>
+            <SafeAreaView style={[styles.safeAreaContainer, { backgroundColor: theme.card }]}>
+                <View style={[styles.navContent, { backgroundColor: theme.card }]}>
                     {routes.map((route) => {
-                        const isActive = getIsActive(route.path);
+                        // Comprobar si la ruta actual coincide con el patrón de esta pestaña
+                        const isActive = route.pattern.test(pathname);
                         const Icon = route.icon;
+
                         return (
                             <TouchableOpacity
                                 key={route.name}
@@ -90,18 +87,16 @@ const CustomBottomNav = () => {
                                 />
                                 <Text style={[
                                     styles.tabLabel,
-                                    {
-                                        color: isActive ? theme.tabBarActive : theme.tabBarInactive
-                                    }
+                                    { color: isActive ? theme.tabBarActive : theme.tabBarInactive }
                                 ]}>
                                     {route.label}
                                 </Text>
-                                {isActive && <View style={[
-                                    styles.indicator,
-                                    {
-                                        backgroundColor: theme.tabBarActive
-                                    }
-                                ]} />}
+                                {isActive && (
+                                    <View style={[
+                                        styles.indicator,
+                                        { backgroundColor: theme.tabBarActive }
+                                    ]} />
+                                )}
                             </TouchableOpacity>
                         );
                     })}
@@ -120,7 +115,6 @@ const styles = StyleSheet.create({
         zIndex: 100,
     },
     safeAreaContainer: {
-        // Para asegurar que la SafeArea funcione correctamente en iOS
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         overflow: 'hidden',
