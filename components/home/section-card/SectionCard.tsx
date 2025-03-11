@@ -16,12 +16,11 @@ const SectionCard: React.FC<SectionCardProps> = ({ children, style }) => {
 
 const styles = StyleSheet.create({
     container: {
-        marginHorizontal: 16,
-        marginBottom: 16,
+        marginVertical: 8,
         backgroundColor: 'white',
-        borderRadius: 12,
+        borderRadius: 16,
         padding: 16,
-        // Shadow for depth
+        // Sombra para dar profundidad
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,

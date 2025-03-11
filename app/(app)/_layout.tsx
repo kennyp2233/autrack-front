@@ -23,9 +23,12 @@ export default function AppLayout() {
                         <Stack.Screen name="vehicles/[id]/maintenance/index" />
                         <Stack.Screen name="vehicles/[id]/maintenance/add" />
                         <Stack.Screen name="vehicles/[id]/maintenance/[id]" />
+                        <Stack.Screen name="maintenance/index" />
+                        <Stack.Screen name="maintenance/add" />
                         <Stack.Screen name="reports/index" />
                         <Stack.Screen name="reports/export" />
                         <Stack.Screen name="settings" />
+                        <Stack.Screen name="more" />
                         <Stack.Screen name="profile" />
                     </Stack>
 
@@ -41,5 +44,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         position: 'relative', // Important for positioning the CustomBottomNav
+        paddingBottom: 70, // Provide space for the bottom navigation
     },
 });

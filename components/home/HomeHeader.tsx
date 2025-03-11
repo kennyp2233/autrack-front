@@ -8,8 +8,9 @@ interface HomeHeaderProps {
     scrollY: Animated.Value;
 }
 
-const HEADER_MAX_HEIGHT = 150; // Altura máxima del header
-const HEADER_MIN_HEIGHT = 70; // Altura mínima del header (contraído)
+// Aumentamos la altura máxima para que el contenido se sobreponga
+const HEADER_MAX_HEIGHT = 220; // Altura máxima del header, aumentada
+const HEADER_MIN_HEIGHT = 80; // Altura mínima del header (contraído), ligeramente aumentada
 const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
 
 const HomeHeader: React.FC<HomeHeaderProps> = ({
@@ -40,25 +41,31 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
 
     const headerOpacity = scrollY.interpolate({
         inputRange: [0, HEADER_SCROLL_DISTANCE / 2, HEADER_SCROLL_DISTANCE],
-        outputRange: [1, 0.5, 0],
+        outputRange: [1, 0.8, 0.6],
+        extrapolate: 'clamp'
+    });
+
+    const headerScale = scrollY.interpolate({
+        inputRange: [0, HEADER_SCROLL_DISTANCE],
+        outputRange: [1, 0.95],
         extrapolate: 'clamp'
     });
 
     const greetingOpacity = scrollY.interpolate({
         inputRange: [0, HEADER_SCROLL_DISTANCE / 2, HEADER_SCROLL_DISTANCE],
-        outputRange: [1, 0, 0],
+        outputRange: [1, 0.5, 0],
         extrapolate: 'clamp'
     });
 
     const nameScale = scrollY.interpolate({
         inputRange: [0, HEADER_SCROLL_DISTANCE],
-        outputRange: [1, 0.8],
+        outputRange: [1, 0.85],
         extrapolate: 'clamp'
     });
 
     const nameTranslateY = scrollY.interpolate({
         inputRange: [0, HEADER_SCROLL_DISTANCE],
-        outputRange: [0, -10],
+        outputRange: [0, -5],
         extrapolate: 'clamp'
     });
 
@@ -68,11 +75,8 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                 styles.headerContainer,
                 {
                     height: headerHeight,
-                    position: 'absolute',
-                    left: 0,
-                    right: 0,
-                    top: 0,
-                    zIndex: 100,
+                    opacity: headerOpacity,
+                    transform: [{ scale: headerScale }]
                 }
             ]}
         >
@@ -121,10 +125,21 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
 
 const styles = StyleSheet.create({
     headerContainer: {
-        backgroundColor: '#333',
-        borderBottomLeftRadius: 20,
-        borderBottomRightRadius: 20,
+        backgroundColor: '#3B82F6',
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
         overflow: 'hidden',
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 0,
+        zIndex: 10,
+        // Sombra para dar efecto de elevación
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 5,
     },
     safeArea: {
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
@@ -133,25 +148,27 @@ const styles = StyleSheet.create({
     headerContent: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         paddingHorizontal: 20,
-        paddingTop: 10,
+        paddingTop: 20,
+        paddingBottom: 30,
         flex: 1,
     },
     greeting: {
         color: 'white',
-        fontSize: 22,
+        fontSize: 24,
         fontWeight: 'bold',
+        marginBottom: 4,
     },
     userName: {
         color: 'white',
         opacity: 0.9,
-        fontSize: 16,
+        fontSize: 18,
     },
     notificationButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 42,
+        height: 42,
+        borderRadius: 21,
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
         justifyContent: 'center',
         alignItems: 'center',
@@ -161,12 +178,14 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 0,
         right: 0,
-        width: 16,
-        height: 16,
-        borderRadius: 8,
+        width: 18,
+        height: 18,
+        borderRadius: 9,
         backgroundColor: '#ff3b30',
         justifyContent: 'center',
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'white',
     },
     notificationBadgeText: {
         color: 'white',

@@ -10,9 +10,9 @@ import VehicleCarousel from '@/components/home/vehicle/VehicleCarousel';
 import MaintenanceList from '@/components/home/maintenance/MaintenanceList';
 import StatsSummary from '@/components/home/stats-summary/StatsSummaryt';
 
-// Definimos las alturas del header para mantener la consistencia
-const HEADER_MAX_HEIGHT = 150;
-const HEADER_MIN_HEIGHT = 70;
+// Definimos las alturas del header para mantener la consistencia con HomeHeader.tsx
+const HEADER_MAX_HEIGHT = 220;
+const HEADER_MIN_HEIGHT = 80;
 const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
 
 export default function HomeScreen() {
@@ -38,12 +38,15 @@ export default function HomeScreen() {
         router.push(`/vehicles/${vehicleId}/maintenance/${maintenanceId}`);
     };
 
-    // Calculamos el padding dinámico basado en la altura del header
-    const paddingTop = Platform.OS === 'ios' ? HEADER_MAX_HEIGHT : HEADER_MAX_HEIGHT + (StatusBar.currentHeight || 0);
+    // Calculamos el padding dinámico para el contenido
+    // Ajustamos para que el primer card aparezca sobrepuesto al header
+    const paddingTop = Platform.OS === 'ios'
+        ? HEADER_MAX_HEIGHT - 60 // iOS
+        : HEADER_MAX_HEIGHT - 60 + (StatusBar.currentHeight || 0); // Android con StatusBar
 
     return (
         <View style={styles.container}>
-            {/* Cabecera animada que recibe el valor de scroll */}
+            {/* Cabecera animada que se sitúa debajo del contenido */}
             <HomeHeader
                 onNotificationPress={handleNotificationPress}
                 scrollY={scrollY}
@@ -60,10 +63,10 @@ export default function HomeScreen() {
                 scrollEventThrottle={16} // Importante: controla la frecuencia de actualización
                 onScroll={Animated.event(
                     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                    { useNativeDriver: false } // Importante: algunos valores no se pueden animar con el driver nativo
+                    { useNativeDriver: false } // Importante para animaciones de layout
                 )}
             >
-                {/* Vehicles Section */}
+                {/* Vehicles Section - Con elevación para que se vea sobre el header */}
                 <SectionCard style={styles.vehiclesCard}>
                     <View style={styles.vehiclesHeader}>
                         <VehicleCarousel
@@ -102,17 +105,26 @@ const styles = StyleSheet.create({
     },
     scrollView: {
         flex: 1,
+        zIndex: 20, // Asegura que el ScrollView esté encima del header
     },
     scrollContent: {
+        paddingHorizontal: 16,
         paddingBottom: 20,
     },
     vehiclesCard: {
-        zIndex: 20,
+        marginTop: 0,
+        zIndex: 30, // Asegura que este card esté por encima
+        // Efecto de elevación extra para el primer card
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+        elevation: 8,
     },
     vehiclesHeader: {
         marginBottom: 12,
     },
     bottomSpacer: {
-        height: 80, // Adjust based on your bottom nav height
+        height: 80, // Ajustar según la altura de tu bottom nav
     },
 });
