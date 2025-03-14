@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useVehicles } from '@/contexts/VehiclesContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { VehicleFormData } from '@/types/Vehicle';
-import StaticHeader from '@/components/StaticHeader';
+import StaticHeader from '@/components/common/StaticHeader';
 import VehicleFormHeader from '@/components/vehicles/add-vehicle-page/vehicle-form-header/VehicleFormHeader';
 import VehicleForm from '@/components/vehicles/add-vehicle-page/vehicle-form/VehicleForm';
 import FormActions from '@/components/vehicles/add-vehicle-page/form-actions/FormActions';

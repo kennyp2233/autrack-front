@@ -4,7 +4,7 @@ import { View, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { VehiclesProvider } from '@/contexts/VehiclesContext';
-import CustomBottomNav from '@/components/CustomBottomNav';
+import CustomBottomNav from '@/components/common/CustomBottomNav';
 import { useNavLayout } from '@/hooks/useNavLayout';
 
 // Altura de la barra de navegación

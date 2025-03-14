@@ -3,7 +3,7 @@ import { View, StyleSheet, Animated, Platform, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useVehicles } from '@/contexts/VehiclesContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import StaticHeader from '@/components/StaticHeader';
+import StaticHeader from '@/components/common/StaticHeader';
 import VehiclesList from '@/components/vehicles/index-vehicle-page/vehicle-list/VehiclesList';
 import SearchBar from '@/components/vehicles/index-vehicle-page/search-bar/SearchBar';
 import AddVehicleButton from '@/components/vehicles/index-vehicle-page/add-vehicle-button/AddVehicleButton';

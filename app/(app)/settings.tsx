@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import StaticHeader from '@/components/StaticHeader';
+import StaticHeader from '@/components/common/StaticHeader';
 
 export default function SettingsScreen() {
     const router = useRouter();
