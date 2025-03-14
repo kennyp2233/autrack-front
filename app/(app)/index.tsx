@@ -62,7 +62,6 @@ export default function HomeScreen() {
                 contentContainerStyle={[
                     styles.scrollContent,
                     { paddingTop },
-                    { paddingBottom: NAVBAR_HEIGHT + 20 } // Añadimos espacio para el navbar
                 ]}
                 showsVerticalScrollIndicator={false}
                 scrollEventThrottle={16} // Importante: controla la frecuencia de actualización

@@ -38,16 +38,6 @@ const routes = [
     }
 ];
 
-// Lista de rutas específicas donde la barra de navegación debe ocultarse
-const hiddenPaths = [
-    /^\/profile$/,
-    /^\/vehicles\/add$/,
-    /^\/vehicles\/\d+$/,
-    /^\/vehicles\/\d+\/edit$/,
-    /^\/vehicles\/\d+\/maintenance($|\/)/,
-    /^\/reports\/export$/
-];
-
 // Altura base del navbar
 const BASE_NAVBAR_HEIGHT = 65;
 
@@ -55,13 +45,6 @@ const CustomBottomNav = () => {
     const router = useRouter();
     const pathname = usePathname();
     const { theme } = useTheme();
-
-    // Comprobar si la barra de navegación debe ocultarse en la ruta actual
-    const shouldHideNav = hiddenPaths.some(pattern => pattern.test(pathname));
-
-    if (shouldHideNav) {
-        return null;
-    }
 
     return (
         <View style={[styles.container, { backgroundColor: 'transparent' }]}>

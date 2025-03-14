@@ -18,6 +18,7 @@ export interface Vehicle {
 }
 
 export interface VehicleFormData {
+  notes: string | undefined;
   brand: string;
   model: string;
   year: string | number;

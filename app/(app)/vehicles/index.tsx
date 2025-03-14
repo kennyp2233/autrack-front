@@ -1,89 +1,133 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Animated, Platform, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
+import { useVehicles } from '@/contexts/VehiclesContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import StaticHeader from '@/components/StaticHeader';
+import VehiclesList from '@/components/vehicles/index-vehicle-page/vehicle-list/VehiclesList';
+import SearchBar from '@/components/vehicles/index-vehicle-page/search-bar/SearchBar';
+import AddVehicleButton from '@/components/vehicles/index-vehicle-page/add-vehicle-button/AddVehicleButton';
+import EmptyVehicleState from '@/components/vehicles/index-vehicle-page/empty-vehicle-state/EmptyVehicleState';
 
-// Datos de ejemplo
-const initialVehicles = [
-    { id: 1, brand: 'Toyota', model: 'Corolla', year: 2019, plate: 'ABC-123', mileage: 35000, lastMaintenance: '15/01/2025' },
-    { id: 2, brand: 'Honda', model: 'Civic', year: 2020, plate: 'XYZ-789', mileage: 28000, lastMaintenance: '02/02/2025' },
-    { id: 3, brand: 'Volkswagen', model: 'Golf', year: 2018, plate: 'DEF-456', mileage: 42000, lastMaintenance: '10/12/2024' },
-    { id: 4, brand: 'Ford', model: 'Focus', year: 2021, plate: 'GHI-789', mileage: 15000, lastMaintenance: '05/02/2025' },
-];
+// Altura para margen superior (espacio para el header)
+const HEADER_HEIGHT = 56;
+const STATUSBAR_HEIGHT = Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0;
+const TOP_SPACING = HEADER_HEIGHT + STATUSBAR_HEIGHT;
 
 export default function VehiclesListScreen() {
-    const [vehicles, setVehicles] = useState(initialVehicles);
-    const [searchQuery, setSearchQuery] = useState('');
+    const { vehicles } = useVehicles();
+    const { theme } = useTheme();
     const router = useRouter();
 
-    // Filtrar vehículos según búsqueda
-    const filteredVehicles = vehicles.filter(vehicle =>
-        `${vehicle.brand} ${vehicle.model} ${vehicle.plate}`.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Estado para la búsqueda
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filteredVehicles, setFilteredVehicles] = useState(vehicles.filter(v => v.isActive));
+
+    // Estado para la animación del input de búsqueda
+    const [searchInputWidth] = useState(new Animated.Value(0));
+    const [isSearchActive, setIsSearchActive] = useState(false);
+
+    // Actualizar vehículos filtrados cuando cambia la búsqueda o los vehículos
+    useEffect(() => {
+        if (!searchQuery.trim()) {
+            setFilteredVehicles(vehicles.filter(v => v.isActive));
+            return;
+        }
+
+        const filtered = vehicles.filter(vehicle => {
+            const searchLower = searchQuery.toLowerCase();
+            return (
+                vehicle.isActive &&
+                (vehicle.brand.toLowerCase().includes(searchLower) ||
+                    vehicle.model.toLowerCase().includes(searchLower) ||
+                    vehicle.plate?.toLowerCase().includes(searchLower) ||
+                    vehicle.year.toString().includes(searchLower))
+            );
+        });
+
+        setFilteredVehicles(filtered);
+    }, [searchQuery, vehicles]);
+
+    // Manejar búsqueda
+    const toggleSearch = () => {
+        if (isSearchActive) {
+            // Cerrar búsqueda
+            setSearchQuery('');
+            Animated.timing(searchInputWidth, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: false
+            }).start(() => {
+                setIsSearchActive(false);
+            });
+        } else {
+            // Abrir búsqueda
+            setIsSearchActive(true);
+            Animated.timing(searchInputWidth, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: false
+            }).start();
+        }
+    };
+
+    // Manejar agregar vehículo
+    const handleAddVehicle = () => {
+        router.push('/vehicles/add');
+    };
+
+    // Manejar toque en un vehículo
+    const handleVehiclePress = (id: number) => {
+        router.push(`/vehicles/${id}`);
+    };
+
+    // Calcular el ancho animado del input de búsqueda
+    const inputWidth = searchInputWidth.interpolate({
+        inputRange: [0, 1],
+        outputRange: ['0%', '100%']
+    });
 
     return (
-        <View style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-                <Text style={styles.title}>Mis Vehículos</Text>
-            </View>
-
-            {/* Search Bar */}
-            <View style={styles.searchContainer}>
-                <Feather name="search" size={20} color="#999" style={styles.searchIcon} />
-                <TextInput
-                    style={styles.searchInput}
-                    placeholder="Buscar vehículo..."
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                />
-                {searchQuery.length > 0 && (
-                    <TouchableOpacity
-                        style={styles.clearButton}
-                        onPress={() => setSearchQuery('')}
-                    >
-                        <Feather name="x" size={18} color="#999" />
-                    </TouchableOpacity>
-                )}
-            </View>
-
-            {/* Vehicles List */}
-            <FlatList
-                data={filteredVehicles}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => (
-                    <TouchableOpacity
-                        style={styles.vehicleItem}
-                        onPress={() => router.push(`/vehicles/${item.id}`)}
-                    >
-                        <View style={styles.vehicleIconContainer}>
-                            <Feather name="truck" size={24} color="#3B82F6" />
-                        </View>
-                        <View style={styles.vehicleInfo}>
-                            <Text style={styles.vehicleName}>{item.brand} {item.model}</Text>
-                            <Text style={styles.vehicleDetails}>{item.year} • {item.plate}</Text>
-                        </View>
-                        <View style={styles.vehicleStats}>
-                            <Text style={styles.vehicleMileage}>{item.mileage} km</Text>
-                            <Text style={styles.vehicleLastMaintenance}>Últ: {item.lastMaintenance}</Text>
-                        </View>
-                    </TouchableOpacity>
-                )}
-                contentContainerStyle={styles.listContent}
-                ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>No se encontraron vehículos</Text>
-                    </View>
-                }
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+            {/* Header estático */}
+            <StaticHeader
+                title="Mis Vehículos"
+                showBackButton={false}
+                rightIcon={isSearchActive ? "x" : "search"}
+                onRightIconPress={toggleSearch}
+                theme={theme}
             />
 
-            {/* Add Vehicle Button */}
-            <TouchableOpacity
-                style={styles.addButton}
-                onPress={() => router.push('/vehicles/add')}
-            >
-                <Feather name="plus" size={24} color="#fff" />
-            </TouchableOpacity>
+            {/* Barra de búsqueda animada */}
+            {isSearchActive && (
+                <SearchBar
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    onClear={() => setSearchQuery('')}
+                    width={inputWidth}
+                    theme={theme}
+                    topPosition={TOP_SPACING}
+                />
+            )}
+
+            {/* Lista de vehículos o estado vacío */}
+            {filteredVehicles.length > 0 ? (
+                <VehiclesList
+                    vehicles={filteredVehicles}
+                    onVehiclePress={handleVehiclePress}
+                    searchActive={isSearchActive}
+                    theme={theme}
+                />
+            ) : (
+                <EmptyVehicleState
+                    searchQuery={searchQuery}
+                    onAddVehicle={handleAddVehicle}
+                    theme={theme}
+                />
+            )}
+
+            {/* Botón flotante para agregar vehículo */}
+            <AddVehicleButton onPress={handleAddVehicle} theme={theme} />
         </View>
     );
 }
@@ -91,102 +135,5 @@ export default function VehiclesListScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
-    },
-    header: {
-        backgroundColor: 'white',
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: 'bold',
-    },
-    searchContainer: {
-        backgroundColor: 'white',
-        flexDirection: 'row',
-        alignItems: 'center',
-        margin: 16,
-        paddingHorizontal: 12,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#eee',
-    },
-    searchIcon: {
-        marginRight: 8,
-    },
-    searchInput: {
-        flex: 1,
-        height: 40,
-    },
-    clearButton: {
-        padding: 4,
-    },
-    listContent: {
-        padding: 16,
-    },
-    vehicleItem: {
-        flexDirection: 'row',
-        backgroundColor: 'white',
-        borderRadius: 8,
-        padding: 16,
-        marginBottom: 12,
-        alignItems: 'center',
-    },
-    vehicleIconContainer: {
-        backgroundColor: '#EBF5FF',
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
-    },
-    vehicleInfo: {
-        flex: 1,
-    },
-    vehicleName: {
-        fontWeight: 'bold',
-        fontSize: 16,
-    },
-    vehicleDetails: {
-        color: '#666',
-        marginTop: 4,
-    },
-    vehicleStats: {
-        alignItems: 'flex-end',
-    },
-    vehicleMileage: {
-        fontWeight: '500',
-    },
-    vehicleLastMaintenance: {
-        color: '#666',
-        fontSize: 12,
-        marginTop: 4,
-    },
-    emptyContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
-    },
-    emptyText: {
-        color: '#666',
-    },
-    addButton: {
-        position: 'absolute',
-        bottom: 24,
-        right: 24,
-        backgroundColor: '#3B82F6',
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        justifyContent: 'center',
-        alignItems: 'center',
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
     },
 });
