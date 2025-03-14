@@ -45,8 +45,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 //router.replace('/(auth)/login');
             } else if (user && inAuthGroup) {
                 // Redirigir al dashboard si el usuario está autenticado
-                router.replace('/(app)');
+                //router.replace('/(app)');
+
             }
+            router.replace('/(app)');
         }
     }, [user, segments, isLoading]);
 
@@ -57,7 +59,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 // Aquí implementarías la lógica para cargar el token y usuario desde AsyncStorage
                 // const storedToken = await AsyncStorage.getItem('userToken');
                 // const storedUser = await AsyncStorage.getItem('userData');
-                
+
                 // Por ahora, simulamos que no hay datos almacenados
                 setToken(null);
                 setUser(null);
@@ -94,7 +96,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
 
             const data = await response.json();
-            
+
             if (data.user && data.token) {
                 // Transformar la respuesta de la API a nuestro formato de Usuario
                 const userData: User = {
@@ -104,15 +106,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     createdAt: data.user.fecha_creacion,
                     lastLogin: data.user.ultimo_inicio_sesion
                 };
-                
+
                 // Guardar en el estado
                 setUser(userData);
                 setToken(data.token);
-                
+
                 // Guardar en AsyncStorage para persistencia
                 // await AsyncStorage.setItem('userToken', data.token);
                 // await AsyncStorage.setItem('userData', JSON.stringify(userData));
-                
+
                 router.replace('/(app)');
             } else {
                 throw new Error('Datos de usuario incompletos');
@@ -148,7 +150,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
 
             const responseData = await response.json();
-            
+
             if (responseData.user && responseData.token) {
                 // Transformar la respuesta de la API a nuestro formato de Usuario
                 const userData: User = {
@@ -158,15 +160,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     createdAt: responseData.user.fecha_creacion,
                     lastLogin: responseData.user.ultimo_inicio_sesion
                 };
-                
+
                 // Guardar en el estado
                 setUser(userData);
                 setToken(responseData.token);
-                
+
                 // Guardar en AsyncStorage para persistencia
                 // await AsyncStorage.setItem('userToken', responseData.token);
                 // await AsyncStorage.setItem('userData', JSON.stringify(userData));
-                
+
                 router.replace('/(app)');
             } else {
                 throw new Error('Datos de usuario incompletos');
@@ -185,11 +187,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Eliminar usuario y token del estado
         setUser(null);
         setToken(null);
-        
+
         // Eliminar de AsyncStorage
         // AsyncStorage.removeItem('userToken');
         // AsyncStorage.removeItem('userData');
-        
+
         router.replace('/(auth)/login');
     };
 

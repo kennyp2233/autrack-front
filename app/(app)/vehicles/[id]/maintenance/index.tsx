@@ -1,15 +1,14 @@
 // app/(app)/vehicles/[id]/maintenance/index.tsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, StatusBar } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useVehicles } from '@/contexts/VehiclesContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Maintenance } from '@/types/Maintenance';
 
-// Importar componentes personalizados
+// Importar componentes personalizados - CORREGIDO: usar el componente correcto de la carpeta maintenance-home-page
 import MaintenanceHeader from '@/components/maintenance/maintenance-home-page/MaintenanceHeader';
 import MaintenanceFilters from '@/components/maintenance/maintenance-home-page/MaintenanceFilters';
-import MaintenanceList from '@/components/home/maintenance/MaintenanceList';
+import MaintenanceList from '@/components/maintenance/maintenance-home-page/MaintenanceList'; // CORREGIDO: importación del componente adecuado
 import AddMaintenanceButton from '@/components/maintenance/maintenance-home-page/AddMaintenanceButton';
 import ErrorScreen from '@/components/common/ErrorScreen';
 
@@ -163,11 +162,10 @@ export default function MaintenanceIndexScreen() {
                 theme={theme}
             />
 
-            {/* Lista de mantenimientos */}
+            {/* Lista de mantenimientos - CORREGIDO: actualizado para usar la estructura correcta */}
             <MaintenanceList
                 maintenanceItems={filteredMaintenance}
-                getVehicleName={(vehicleId) => getVehicle(vehicleId)?.brand || 'Vehículo desconocido'}
-                onItemPress={(vehicleId, maintenanceId) => handleMaintenancePress(maintenanceId)}
+                onItemPress={handleMaintenancePress}
                 theme={theme}
             />
 

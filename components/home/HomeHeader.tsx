@@ -1,25 +1,50 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Platform, StatusBar, Animated } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface HomeHeaderProps {
     onNotificationPress?: () => void;
+    onProfilePress?: () => void;
     scrollY: Animated.Value;
-    theme: any; // Usamos any por ahora, idealmente definiríamos el tipo ThemeType
+    theme: any; // Idealmente definiríamos un tipo ThemeType específico
 }
 
-// Aumentamos la altura máxima para que el contenido se sobreponga
-const HEADER_MAX_HEIGHT = 220; // Altura máxima del header, aumentada
-const HEADER_MIN_HEIGHT = 80; // Altura mínima del header (contraído), ligeramente aumentada
+// Mantenemos las mismas constantes del diseño original
+const HEADER_MAX_HEIGHT = 200;
+const HEADER_MIN_HEIGHT = 80;
 const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
 
 const HomeHeader: React.FC<HomeHeaderProps> = ({
     onNotificationPress,
+    onProfilePress,
     scrollY,
     theme
 }) => {
     const { user } = useAuth();
+    const [notificationCount, setNotificationCount] = useState(2);
+    const [timeOfDay, setTimeOfDay] = useState('');
+
+    // Actualizar la hora del día al iniciar
+    useEffect(() => {
+        updateTimeOfDay();
+        // Opcionalmente: Configurar un intervalo para actualizar el saludo durante una sesión larga
+        const intervalId = setInterval(updateTimeOfDay, 60000);
+        return () => clearInterval(intervalId);
+    }, []);
+
+    // Obtener saludo según hora del día
+    const updateTimeOfDay = () => {
+        const hour = new Date().getHours();
+        if (hour >= 5 && hour < 12) {
+            setTimeOfDay('Buenos días');
+        } else if (hour >= 12 && hour < 19) {
+            setTimeOfDay('Buenas tardes');
+        } else {
+            setTimeOfDay('Buenas noches');
+        }
+    };
 
     // Get user's first name for greeting
     const firstName = user?.fullName ? user.fullName.split(' ')[0] : 'Usuario';
@@ -29,12 +54,20 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
         if (onNotificationPress) {
             onNotificationPress();
         } else {
-            // Default notification handling
             console.log('Notification pressed');
         }
     };
 
-    // Animaciones basadas en el valor de scroll
+    // Handle profile press
+    const handleProfilePress = () => {
+        if (onProfilePress) {
+            onProfilePress();
+        } else {
+            console.log('Profile pressed');
+        }
+    };
+
+    // Animaciones basadas en el valor de scroll (manteniendo los originales)
     const headerHeight = scrollY.interpolate({
         inputRange: [0, HEADER_SCROLL_DISTANCE],
         outputRange: [HEADER_MAX_HEIGHT, HEADER_MIN_HEIGHT],
@@ -71,6 +104,11 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
         extrapolate: 'clamp'
     });
 
+    // Colores para el gradiente basados en el tema
+    const gradientColors: readonly [string, string, string] = theme.isDark
+        ? [theme.primary, `${theme.primary}E6`, `${theme.primary}80`]
+        : [theme.primary, `${theme.primary}F2`, `${theme.primary}CC`];
+
     // Aseguramos colores de alto contraste para texto sobre el fondo primario
     const textColor = '#FFFFFF'; // Blanco para garantizar contraste sobre fondos oscuros
 
@@ -82,13 +120,24 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                     height: headerHeight,
                     opacity: headerOpacity,
                     transform: [{ scale: headerScale }],
-                    backgroundColor: theme.primary,
                 }
             ]}
         >
+            {/* Gradiente para mejorar la apariencia del header */}
+            <LinearGradient
+                colors={gradientColors}
+                style={StyleSheet.absoluteFill}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+            />
+
             <SafeAreaView style={styles.safeArea}>
                 <View style={styles.headerContent}>
-                    <View>
+                    <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={handleProfilePress}
+                        style={styles.profileSection}
+                    >
                         <Animated.Text
                             style={[
                                 styles.greeting,
@@ -98,7 +147,7 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                                 }
                             ]}
                         >
-                            Buenos días
+                            {timeOfDay}
                         </Animated.Text>
                         <Animated.Text
                             style={[
@@ -114,24 +163,29 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                         >
                             {firstName}
                         </Animated.Text>
-                    </View>
+                    </TouchableOpacity>
 
                     <TouchableOpacity
                         style={[styles.notificationButton, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}
                         onPress={handleNotificationPress}
+                        activeOpacity={0.7}
                     >
                         <Feather name="bell" size={24} color={textColor} />
-                        <View
-                            style={[
-                                styles.notificationBadge,
-                                {
-                                    backgroundColor: theme.notification,
-                                    borderColor: theme.primary
-                                }
-                            ]}
-                        >
-                            <Text style={[styles.notificationBadgeText, { color: textColor }]}>2</Text>
-                        </View>
+                        {notificationCount > 0 && (
+                            <View
+                                style={[
+                                    styles.notificationBadge,
+                                    {
+                                        backgroundColor: theme.notification || theme.danger,
+                                        borderColor: 'rgba(255, 255, 255, 0.3)'
+                                    }
+                                ]}
+                            >
+                                <Text style={[styles.notificationBadgeText, { color: textColor }]}>
+                                    {notificationCount}
+                                </Text>
+                            </View>
+                        )}
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
@@ -148,13 +202,13 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         top: 0,
-        zIndex: 10,
+        zIndex: 1,
         // Sombra para dar efecto de elevación
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 5,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 8,
     },
     safeArea: {
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
@@ -167,6 +221,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingTop: 20,
         paddingBottom: 30,
+        flex: 1,
+    },
+    profileSection: {
         flex: 1,
     },
     greeting: {
@@ -188,11 +245,11 @@ const styles = StyleSheet.create({
     },
     notificationBadge: {
         position: 'absolute',
-        top: 0,
-        right: 0,
-        width: 18,
-        height: 18,
-        borderRadius: 9,
+        top: -4,
+        right: -4,
+        width: 20,
+        height: 20,
+        borderRadius: 10,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,

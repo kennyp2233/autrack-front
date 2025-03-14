@@ -8,7 +8,7 @@ import VehicleCard from './VehicleCard';
 interface VehicleCarouselProps {
     vehicles: Vehicle[];
     onViewAll: () => void;
-    theme?: any; // Tipo del tema
+    theme: any; // Tipo del tema
 }
 
 const VehicleCarousel: React.FC<VehicleCarouselProps> = ({
@@ -37,29 +37,41 @@ const VehicleCarousel: React.FC<VehicleCarouselProps> = ({
         }
     };
 
-    // Usamos colores fallback con buen contraste en caso de que el tema no esté disponible
-    const backgroundColor = theme?.card || '#FFFFFF';
-    const textColor = theme?.text || '#333333';
-    const secondaryTextColor = theme?.secondaryText || '#555555';
-    const primaryColor = theme?.primary || '#333333';
-    const buttonTextColor = '#FFFFFF'; // Siempre blanco para garantizar contraste sobre fondos oscuros
+    // Renderizar el encabezado de la sección
+    const renderSectionHeader = () => (
+        <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                Mis Vehículos
+            </Text>
+            <TouchableOpacity
+                style={styles.viewAllButton}
+                onPress={onViewAll}
+            >
+                <Text style={[styles.viewAllText, { color: theme.primary }]}>Ver todos</Text>
+                <Feather name="chevron-right" size={16} color={theme.primary} />
+            </TouchableOpacity>
+        </View>
+    );
 
     // If no vehicles available
     if (vehicles.length === 0) {
         return (
-            <View style={[styles.emptyVehicle, { backgroundColor }]}>
-                <Feather name="truck" size={40} color={secondaryTextColor} />
-                <Text style={[styles.emptyText, { color: secondaryTextColor }]}>
-                    No tienes vehículos registrados
-                </Text>
-                <TouchableOpacity
-                    style={[styles.addButton, { backgroundColor: primaryColor }]}
-                    onPress={() => router.push('/vehicles/add')}
-                >
-                    <Text style={[styles.addButtonText, { color: buttonTextColor }]}>
-                        Agregar Vehículo
+            <View>
+                {renderSectionHeader()}
+                <View style={[styles.emptyVehicle, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    <Feather name="truck" size={40} color={theme.secondaryText} />
+                    <Text style={[styles.emptyText, { color: theme.secondaryText }]}>
+                        No tienes vehículos registrados
                     </Text>
-                </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.addButton, { backgroundColor: theme.primary }]}
+                        onPress={() => router.push('/vehicles/add')}
+                    >
+                        <Text style={styles.addButtonText}>
+                            Agregar Vehículo
+                        </Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         );
     }
@@ -68,57 +80,99 @@ const VehicleCarousel: React.FC<VehicleCarouselProps> = ({
     const currentVehicle = vehicles[activeIndex];
 
     return (
-        <View style={styles.carouselContainer}>
-            <TouchableOpacity
-                style={[
-                    styles.navButton,
-                    activeIndex === 0 && styles.navButtonDisabled,
-                    { backgroundColor }
-                ]}
-                onPress={handlePrevVehicle}
-                disabled={activeIndex === 0}
-            >
-                <Feather
-                    name="chevron-left"
-                    size={24}
-                    color={activeIndex === 0 ? (theme?.border || "#CCCCCC") : textColor}
-                />
-            </TouchableOpacity>
+        <View>
+            {renderSectionHeader()}
 
-            <VehicleCard
-                vehicle={currentVehicle}
-                onPress={handleVehiclePress}
-                theme={theme}
-            />
+            <View style={styles.carouselContainer}>
+                <TouchableOpacity
+                    style={[
+                        styles.navButton,
+                        activeIndex === 0 && styles.navButtonDisabled,
+                        { backgroundColor: theme.card }
+                    ]}
+                    onPress={handlePrevVehicle}
+                    disabled={activeIndex === 0}
+                >
+                    <Feather
+                        name="chevron-left"
+                        size={24}
+                        color={activeIndex === 0 ? theme.border : theme.text}
+                    />
+                </TouchableOpacity>
 
-            <TouchableOpacity
-                style={[
-                    styles.navButton,
-                    activeIndex === vehicles.length - 1 && styles.navButtonDisabled,
-                    { backgroundColor }
-                ]}
-                onPress={handleNextVehicle}
-                disabled={activeIndex === vehicles.length - 1}
-            >
-                <Feather
-                    name="chevron-right"
-                    size={24}
-                    color={activeIndex === vehicles.length - 1 ? (theme?.border || "#CCCCCC") : textColor}
+                <VehicleCard
+                    vehicle={currentVehicle}
+                    onPress={() => handleVehiclePress(currentVehicle.id)}
+                    theme={theme}
                 />
-            </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[
+                        styles.navButton,
+                        activeIndex === vehicles.length - 1 && styles.navButtonDisabled,
+                        { backgroundColor: theme.card }
+                    ]}
+                    onPress={handleNextVehicle}
+                    disabled={activeIndex === vehicles.length - 1}
+                >
+                    <Feather
+                        name="chevron-right"
+                        size={24}
+                        color={activeIndex === vehicles.length - 1 ? theme.border : theme.text}
+                    />
+                </TouchableOpacity>
+            </View>
+
+            {/* Indicadores de paginación */}
+            {vehicles.length > 1 && (
+                <View style={styles.pagination}>
+                    {vehicles.map((_, index) => (
+                        <View
+                            key={index}
+                            style={[
+                                styles.paginationDot,
+                                {
+                                    backgroundColor: index === activeIndex
+                                        ? theme.primary
+                                        : theme.border
+                                }
+                            ]}
+                        />
+                    ))}
+                </View>
+            )}
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    carouselContainer: {
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    viewAllButton: {
         flexDirection: 'row',
         alignItems: 'center',
     },
+    viewAllText: {
+        fontWeight: '500',
+        marginRight: 4,
+    },
+    carouselContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
     navButton: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         justifyContent: 'center',
         alignItems: 'center',
         // Shadow for the button
@@ -131,9 +185,23 @@ const styles = StyleSheet.create({
     navButtonDisabled: {
         opacity: 0.5,
     },
+    pagination: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: 8,
+    },
+    paginationDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginHorizontal: 4,
+    },
     emptyVehicle: {
         alignItems: 'center',
         padding: 24,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderStyle: 'dashed',
     },
     emptyText: {
         marginVertical: 8,
@@ -146,6 +214,7 @@ const styles = StyleSheet.create({
     },
     addButtonText: {
         fontWeight: 'bold',
+        color: 'white',
     },
 });
 

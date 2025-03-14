@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityInd
 import { Link, router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function LoginScreen() {
     const [email, setEmail] = useState('');
@@ -12,6 +13,7 @@ export default function LoginScreen() {
     const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
     const { login, isLoading } = useAuth();
+    const { theme } = useTheme(); // Usar el tema
 
     // Validar email
     const isValidEmail = (email: string) => {
@@ -51,32 +53,43 @@ export default function LoginScreen() {
         }
     };
 
+    // Definir colores del tema
+    const textColor = theme.text;
+    const secondaryTextColor = theme.secondaryText;
+    const primaryColor = theme.primary;
+    const cardColor = theme.card;
+    const backgroundColor = theme.background;
+    const errorColor = theme.danger || '#EF4444';
+    const borderColor = theme.border;
+
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor }]}>
             {/* Header */}
             <View style={styles.header}>
-                <View style={styles.logoContainer}>
+                <View style={[styles.logoContainer, { backgroundColor: primaryColor }]}>
                     <Feather name="truck" size={32} color="white" />
                 </View>
-                <Text style={styles.appName}>Mi Garaje</Text>
-                <Text style={styles.appDescription}>Gestiona el mantenimiento de tus vehículos</Text>
+                <Text style={[styles.appName, { color: textColor }]}>Mi Garaje</Text>
+                <Text style={[styles.appDescription, { color: secondaryTextColor }]}>Gestiona el mantenimiento de tus vehículos</Text>
             </View>
 
             {/* Form */}
             <View style={styles.formContainer}>
-                <Text style={styles.title}>Iniciar sesión</Text>
+                <Text style={[styles.title, { color: textColor }]}>Iniciar sesión</Text>
 
                 {/* Email */}
                 <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Correo electrónico</Text>
+                    <Text style={[styles.label, { color: textColor }]}>Correo electrónico</Text>
                     <View style={[
                         styles.inputWrapper,
-                        errors.email ? styles.inputWrapperError : null
+                        { borderColor: errors.email ? errorColor : borderColor },
+                        { backgroundColor: cardColor }
                     ]}>
-                        <Feather name="mail" size={18} color="#999" style={styles.inputIcon} />
+                        <Feather name="mail" size={18} color={secondaryTextColor} style={styles.inputIcon} />
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { color: textColor }]}
                             placeholder="tu@email.com"
+                            placeholderTextColor={secondaryTextColor}
                             value={email}
                             onChangeText={(text) => {
                                 setEmail(text);
@@ -87,20 +100,22 @@ export default function LoginScreen() {
                             editable={!isLoading}
                         />
                     </View>
-                    {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+                    {errors.email && <Text style={[styles.errorText, { color: errorColor }]}>{errors.email}</Text>}
                 </View>
 
                 {/* Password */}
                 <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Contraseña</Text>
+                    <Text style={[styles.label, { color: textColor }]}>Contraseña</Text>
                     <View style={[
                         styles.inputWrapper,
-                        errors.password ? styles.inputWrapperError : null
+                        { borderColor: errors.password ? errorColor : borderColor },
+                        { backgroundColor: cardColor }
                     ]}>
-                        <Feather name="lock" size={18} color="#999" style={styles.inputIcon} />
+                        <Feather name="lock" size={18} color={secondaryTextColor} style={styles.inputIcon} />
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { color: textColor }]}
                             placeholder="••••••••"
+                            placeholderTextColor={secondaryTextColor}
                             value={password}
                             onChangeText={(text) => {
                                 setPassword(text);
@@ -113,10 +128,10 @@ export default function LoginScreen() {
                             onPress={() => setShowPassword(!showPassword)}
                             disabled={isLoading}
                         >
-                            <Feather name={showPassword ? "eye-off" : "eye"} size={18} color="#999" />
+                            <Feather name={showPassword ? "eye-off" : "eye"} size={18} color={secondaryTextColor} />
                         </TouchableOpacity>
                     </View>
-                    {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+                    {errors.password && <Text style={[styles.errorText, { color: errorColor }]}>{errors.password}</Text>}
                 </View>
 
                 {/* Remember Me and Forgot Password */}
@@ -126,22 +141,31 @@ export default function LoginScreen() {
                         onPress={() => setRememberMe(!rememberMe)}
                         disabled={isLoading}
                     >
-                        <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
+                        <View style={[
+                            styles.checkbox,
+                            { 
+                                borderColor: rememberMe ? primaryColor : borderColor,
+                                backgroundColor: rememberMe ? primaryColor : 'transparent'
+                            }
+                        ]}>
                             {rememberMe && <Feather name="check" size={12} color="white" />}
                         </View>
-                        <Text>Recordarme</Text>
+                        <Text style={{ color: textColor }}>Recordarme</Text>
                     </TouchableOpacity>
 
                     <Link href="/(auth)/recovery" asChild>
                         <TouchableOpacity disabled={isLoading}>
-                            <Text style={styles.forgotPassword}>¿Olvidaste tu contraseña?</Text>
+                            <Text style={[styles.forgotPassword, { color: primaryColor }]}>¿Olvidaste tu contraseña?</Text>
                         </TouchableOpacity>
                     </Link>
                 </View>
 
                 {/* Login Button */}
                 <TouchableOpacity
-                    style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+                    style={[
+                        styles.loginButton, 
+                        { backgroundColor: isLoading ? `${primaryColor}80` : primaryColor }
+                    ]}
                     onPress={handleLogin}
                     disabled={isLoading}
                 >
@@ -154,10 +178,10 @@ export default function LoginScreen() {
 
                 {/* Register Link */}
                 <View style={styles.registerContainer}>
-                    <Text>¿No tienes una cuenta? </Text>
+                    <Text style={{ color: secondaryTextColor }}>¿No tienes una cuenta? </Text>
                     <Link href="/(auth)/register" asChild>
                         <TouchableOpacity disabled={isLoading}>
-                            <Text style={styles.registerLink}>Regístrate</Text>
+                            <Text style={[styles.registerLink, { color: primaryColor }]}>Regístrate</Text>
                         </TouchableOpacity>
                     </Link>
                 </View>
@@ -169,7 +193,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: 'white',
         padding: 16,
     },
     header: {
@@ -181,7 +204,6 @@ const styles = StyleSheet.create({
         width: 60,
         height: 60,
         borderRadius: 10,
-        backgroundColor: '#3B82F6',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 16,
@@ -192,7 +214,6 @@ const styles = StyleSheet.create({
     },
     appDescription: {
         marginTop: 8,
-        color: '#666',
     },
     formContainer: {
         flex: 1,
@@ -213,12 +234,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#ddd',
         borderRadius: 8,
         paddingHorizontal: 8,
-    },
-    inputWrapperError: {
-        borderColor: '#ff3b30',
     },
     inputIcon: {
         marginRight: 8,
@@ -228,7 +245,6 @@ const styles = StyleSheet.create({
         height: 48,
     },
     errorText: {
-        color: '#ff3b30',
         marginTop: 4,
         fontSize: 12,
     },
@@ -246,29 +262,20 @@ const styles = StyleSheet.create({
         width: 18,
         height: 18,
         borderWidth: 1,
-        borderColor: '#ddd',
         borderRadius: 4,
         marginRight: 8,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    checkboxChecked: {
-        backgroundColor: '#3B82F6',
-        borderColor: '#3B82F6',
-    },
     forgotPassword: {
-        color: '#3B82F6',
+        fontWeight: '500',
     },
     loginButton: {
-        backgroundColor: '#3B82F6',
         borderRadius: 8,
         height: 48,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 24,
-    },
-    loginButtonDisabled: {
-        backgroundColor: '#a8c7fa',
     },
     loginButtonText: {
         color: 'white',
@@ -279,7 +286,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     registerLink: {
-        color: '#3B82F6',
         fontWeight: '500',
     },
 });

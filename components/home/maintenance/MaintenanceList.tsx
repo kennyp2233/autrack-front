@@ -1,13 +1,15 @@
+// components/home/maintenance/MaintenanceList.tsx
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { Maintenance } from '@/types/Maintenance';
 
 interface MaintenanceListProps {
     maintenanceItems: Maintenance[];
     getVehicleName: (vehicleId: number) => string;
     onItemPress: (vehicleId: number, maintenanceId: number) => void;
-    onViewAll?: () => void;
-    theme?: any; // Tipo del tema
+    onViewAll: () => void;
+    theme: any;
 }
 
 const MaintenanceList: React.FC<MaintenanceListProps> = ({
@@ -17,114 +19,276 @@ const MaintenanceList: React.FC<MaintenanceListProps> = ({
     onViewAll,
     theme
 }) => {
-    // Definir colores con valores por defecto que garantizan buen contraste
-    const textColor = theme?.text || '#333333';
-    const secondaryTextColor = theme?.secondaryText || '#555555'; // Más oscuro que el original para mejor contraste
-    const primaryColor = theme?.primary || '#3B82F6';
-    const borderColor = theme?.border || '#E0E0E0'; // Más oscuro para mejor visibilidad
+    // Extraer colores del tema
+    const textColor = theme.text;
+    const secondaryTextColor = theme.secondaryText;
+    const primaryColor = theme.primary;
+    const cardColor = theme.card;
+    const borderColor = theme.border;
+    const isDark = theme.isDark;
 
-    if (maintenanceItems.length === 0) {
+    // Formatear fecha
+    const formatDate = (dateString: string) => {
+        if (!dateString) return '';
+
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        } catch (e) {
+            return dateString;
+        }
+    };
+
+    // Determinar el ícono basado en tipo de mantenimiento
+    const getMaintenanceIcon = (type: string) => {
+        const lowerType = type.toLowerCase();
+
+        if (lowerType.includes('aceite')) return 'droplet';
+        if (lowerType.includes('freno')) return 'alert-octagon';
+        if (lowerType.includes('neumático') || lowerType.includes('rueda')) return 'circle';
+        if (lowerType.includes('alineación') || lowerType.includes('balanceo')) return 'sliders';
+        if (lowerType.includes('filtro')) return 'filter';
+        if (lowerType.includes('batería')) return 'battery';
+        if (lowerType.includes('general') || lowerType.includes('revisión')) return 'clipboard';
+
+        return 'tool';
+    };
+
+    // Renderizar el encabezado de la sección
+    const renderSectionHeader = () => (
+        <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: textColor }]}>
+                Próximos Mantenimientos
+            </Text>
+            <TouchableOpacity
+                style={styles.viewAllButton}
+                onPress={onViewAll}
+            >
+                <Text style={[styles.viewAllText, { color: primaryColor }]}>Ver todos</Text>
+                <Feather name="chevron-right" size={16} color={primaryColor} />
+            </TouchableOpacity>
+        </View>
+    );
+
+    // Renderizar un elemento de mantenimiento
+    const renderItem = ({ item }: { item: Maintenance }) => {
+        const maintenanceIcon = getMaintenanceIcon(item.type);
+        const vehicleName = getVehicleName(item.vehicleId);
+
         return (
-            <View style={styles.emptyState}>
-                <Text style={[styles.emptyText, { color: secondaryTextColor }]}>
-                    No hay mantenimientos programados
-                </Text>
-            </View>
-        );
-    }
+            <TouchableOpacity
+                style={[
+                    styles.maintenanceItem,
+                    { backgroundColor: cardColor, borderColor }
+                ]}
+                onPress={() => onItemPress(item.vehicleId, item.id)}
+                activeOpacity={0.7}
+            >
+                <View style={[
+                    styles.iconContainer,
+                    { backgroundColor: `${primaryColor}15` }
+                ]}>
+                    <Feather name={maintenanceIcon as any} size={20} color={primaryColor} />
+                </View>
 
-    return (
-        <View>
-            <View style={styles.header}>
-                <Text style={[styles.title, { color: textColor }]}>
-                    Próximos Mantenimientos
-                </Text>
-                {onViewAll && (
-                    <TouchableOpacity onPress={onViewAll}>
-                        <Text style={[styles.viewAllText, { color: primaryColor }]}>
-                            Ver todos
-                        </Text>
-                    </TouchableOpacity>
-                )}
-            </View>
-
-            {maintenanceItems.map((item) => (
-                <TouchableOpacity
-                    key={item.id}
-                    style={[styles.maintenanceItem, { borderBottomColor: borderColor }]}
-                    onPress={() => onItemPress(item.vehicleId, item.id)}
-                >
-                    <View style={styles.maintenanceInfo}>
+                <View style={styles.maintenanceContent}>
+                    <View style={styles.maintenanceHeader}>
                         <Text style={[styles.maintenanceType, { color: textColor }]}>
                             {item.type}
                         </Text>
-                        <Text style={[styles.maintenanceVehicle, { color: secondaryTextColor }]}>
-                            {getVehicleName(item.vehicleId)}
+                        <Text style={[styles.maintenanceCost, { color: primaryColor }]}>
+                            ${item.cost?.toFixed(2) || '0.00'}
                         </Text>
                     </View>
-                    <View style={styles.maintenanceDate}>
-                        <Text style={[styles.maintenanceDateText, { color: textColor }]}>
-                            {item.date}
-                        </Text>
-                        <Text style={[styles.maintenanceDaysLeft, { color: secondaryTextColor }]}>
-                            Próximamente
-                        </Text>
+
+                    <View style={styles.maintenanceDetails}>
+                        <View style={styles.detailItem}>
+                            <Feather name="calendar" size={12} color={secondaryTextColor} style={styles.detailIcon} />
+                            <Text style={[styles.detailText, { color: secondaryTextColor }]}>
+                                {formatDate(item.date)}
+                            </Text>
+                        </View>
+
+                        <View style={styles.detailItem}>
+                            <Feather name="truck" size={12} color={secondaryTextColor} style={styles.detailIcon} />
+                            <Text style={[styles.detailText, { color: secondaryTextColor }]}>
+                                {vehicleName}
+                            </Text>
+                        </View>
                     </View>
-                </TouchableOpacity>
-            ))}
+
+                    {item.location && (
+                        <View style={styles.locationContainer}>
+                            <Feather name="map-pin" size={12} color={secondaryTextColor} style={styles.detailIcon} />
+                            <Text style={[styles.locationText, { color: secondaryTextColor }]} numberOfLines={1}>
+                                {item.location}
+                            </Text>
+                        </View>
+                    )}
+                </View>
+
+                <Feather name="chevron-right" size={20} color={secondaryTextColor} />
+            </TouchableOpacity>
+        );
+    };
+
+    // Renderizar cuando no hay mantenimientos
+    const renderEmptyState = () => (
+        <View style={[styles.emptyContainer, { borderColor }]}>
+            <Feather name="calendar" size={48} color={secondaryTextColor} />
+            <Text style={[styles.emptyTitle, { color: textColor }]}>
+                Sin próximos mantenimientos
+            </Text>
+            <Text style={[styles.emptyMessage, { color: secondaryTextColor }]}>
+                Programa mantenimientos para tus vehículos y visualiza tu historial
+            </Text>
+            <TouchableOpacity
+                style={[styles.addButton, { backgroundColor: primaryColor }]}
+                onPress={onViewAll}
+            >
+                <Feather name="plus" size={16} color="#fff" style={styles.addButtonIcon} />
+                <Text style={styles.addButtonText}>Agregar mantenimiento</Text>
+            </TouchableOpacity>
+        </View>
+    );
+
+    return (
+        <View style={styles.container}>
+            {renderSectionHeader()}
+
+            {maintenanceItems.length > 0 ? (
+                maintenanceItems.map((item) => (
+                    <View key={item.id}>
+                        {renderItem({ item })}
+                    </View>
+                ))
+            ) : (
+                renderEmptyState()
+            )}
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    header: {
+    container: {
+        paddingVertical: 16,
+    },
+    sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 16,
     },
-    title: {
-        fontSize: 16,
+    sectionTitle: {
+        fontSize: 18,
         fontWeight: 'bold',
     },
+    viewAllButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
     viewAllText: {
-        fontSize: 14,
-        fontWeight: '500', // Añadido peso para mejorar legibilidad
+        fontWeight: '500',
+        marginRight: 4,
     },
     maintenanceItem: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
+        alignItems: 'center',
+        borderRadius: 12,
+        marginBottom: 12,
+        padding: 12,
+        borderWidth: 1,
     },
-    maintenanceInfo: {
+    iconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    maintenanceContent: {
         flex: 1,
+        marginRight: 8,
+    },
+    maintenanceHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 4,
     },
     maintenanceType: {
+        fontSize: 16,
         fontWeight: 'bold',
-        fontSize: 14,
+        flex: 1,
+        marginRight: 8,
     },
-    maintenanceVehicle: {
+    maintenanceCost: {
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    maintenanceDetails: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginBottom: 4,
+    },
+    detailItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginRight: 12,
+        marginBottom: 4,
+    },
+    detailIcon: {
+        marginRight: 4,
+    },
+    detailText: {
         fontSize: 12,
-        marginTop: 4,
     },
-    maintenanceDate: {
-        alignItems: 'flex-end',
-    },
-    maintenanceDateText: {
-        fontWeight: '500',
-        fontSize: 14,
-    },
-    maintenanceDaysLeft: {
-        fontSize: 12,
-        marginTop: 4,
-    },
-    emptyState: {
-        padding: 16,
+    locationContainer: {
+        flexDirection: 'row',
         alignItems: 'center',
     },
-    emptyText: {
-        fontSize: 14, // Especificado para consistencia
+    locationText: {
+        fontSize: 12,
+        flex: 1,
+    },
+    emptyContainer: {
+        borderRadius: 12,
+        borderWidth: 1,
+        borderStyle: 'dashed',
+        padding: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginTop: 16,
+        marginBottom: 8,
+    },
+    emptyMessage: {
+        fontSize: 14,
+        textAlign: 'center',
+        lineHeight: 20,
+        marginBottom: 16,
+    },
+    addButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+    },
+    addButtonIcon: {
+        marginRight: 8,
+    },
+    addButtonText: {
+        color: '#fff',
+        fontWeight: '500',
     },
 });
 
