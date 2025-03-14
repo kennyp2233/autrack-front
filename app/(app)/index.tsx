@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { View, StyleSheet, Animated, Platform, StatusBar, SafeAreaView } from 'react-native';
+import { View, StyleSheet, Animated, Platform, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useVehicles } from '@/contexts/VehiclesContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -20,7 +20,7 @@ const NAVBAR_HEIGHT = 80; // Altura del navbar según CustomBottomNav.tsx
 export default function HomeScreen() {
     const router = useRouter();
     const { vehicles, maintenance } = useVehicles();
-    const { theme, isDark } = useTheme();
+    const { theme } = useTheme();
 
     // Creamos una referencia para el valor de animación del scroll
     const scrollY = useRef(new Animated.Value(0)).current;

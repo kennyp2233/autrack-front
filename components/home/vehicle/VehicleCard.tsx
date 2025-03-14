@@ -10,6 +10,12 @@ interface VehicleCardProps {
 }
 
 const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onPress, theme }) => {
+    // Definir colores con valores por defecto que garantizan buen contraste
+    const textColor = theme?.text || '#333333';
+    const secondaryTextColor = theme?.secondaryText || '#555555'; // Más oscuro que el original para mejor contraste
+    const progressBgColor = theme?.progressBarBackground || '#E5E7EB';
+    const progressFillColor = theme?.success || '#4CAF50';
+
     return (
         <TouchableOpacity
             style={styles.container}
@@ -17,10 +23,10 @@ const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onPress, theme }) =>
             activeOpacity={0.9}
         >
             <View>
-                <Text style={[styles.name, { color: theme?.text || '#333' }]}>
+                <Text style={[styles.name, { color: textColor }]}>
                     {vehicle.brand} {vehicle.model}
                 </Text>
-                <Text style={[styles.year, { color: theme?.secondaryText || '#666' }]}>
+                <Text style={[styles.year, { color: secondaryTextColor }]}>
                     {vehicle.year}
                 </Text>
             </View>
@@ -30,45 +36,45 @@ const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onPress, theme }) =>
                 <Feather
                     name="truck"
                     size={60}
-                    color={theme?.text || "#000"}
-                    style={[styles.image, { opacity: theme?.isDark ? 0.6 : 0.7 }]}
+                    color={textColor}
+                    style={[styles.image, { opacity: theme?.isDark ? 0.7 : 0.8 }]} // Aumentada para mejor visibilidad
                 />
             </View>
 
             <View style={styles.statsRow}>
                 <View style={styles.stat}>
-                    <Text style={[styles.statLabel, { color: theme?.secondaryText || '#666' }]}>
+                    <Text style={[styles.statLabel, { color: secondaryTextColor }]}>
                         Kilometraje
                     </Text>
-                    <Text style={[styles.statValue, { color: theme?.text || '#333' }]}>
+                    <Text style={[styles.statValue, { color: textColor }]}>
                         {vehicle.mileage}km
                     </Text>
                 </View>
 
                 <View style={styles.stat}>
-                    <Text style={[styles.statLabel, { color: theme?.secondaryText || '#666' }]}>
+                    <Text style={[styles.statLabel, { color: secondaryTextColor }]}>
                         Último servicio
                     </Text>
-                    <Text style={[styles.statValue, { color: theme?.text || '#333' }]}>
+                    <Text style={[styles.statValue, { color: textColor }]}>
                         {vehicle.lastMaintenance || 'No registrado'}
                     </Text>
                 </View>
             </View>
 
             <View style={styles.statusContainer}>
-                <Text style={[styles.statusLabel, { color: theme?.secondaryText || '#666' }]}>
+                <Text style={[styles.statusLabel, { color: secondaryTextColor }]}>
                     Estado general
                 </Text>
-                <View style={[styles.progressBar, { backgroundColor: theme?.progressBarBackground || '#E5E7EB' }]}>
+                <View style={[styles.progressBar, { backgroundColor: progressBgColor }]}>
                     <View style={[
                         styles.progressFill,
                         {
                             width: '85%',
-                            backgroundColor: theme?.success || '#4CAF50'
+                            backgroundColor: progressFillColor
                         }
                     ]} />
                 </View>
-                <Text style={[styles.statusPercent, { color: theme?.secondaryText || '#666' }]}>
+                <Text style={[styles.statusPercent, { color: secondaryTextColor }]}>
                     85%
                 </Text>
             </View>
@@ -95,7 +101,7 @@ const styles = StyleSheet.create({
         marginVertical: 16,
     },
     image: {
-        opacity: 0.7,
+        // Quitamos la opacidad del estilo base y la controlamos con las props
     },
     statsRow: {
         flexDirection: 'row',

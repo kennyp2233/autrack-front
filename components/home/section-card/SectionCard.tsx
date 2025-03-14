@@ -19,12 +19,15 @@ const styles = StyleSheet.create({
         marginVertical: 8,
         borderRadius: 16,
         padding: 16,
-        // Sombra para dar profundidad
+        // Sombra mejorada para dar mejor profundidad y funcionar mejor en ambos modos
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
+        shadowOpacity: 0.12, // Ligeramente aumentada para mejor visibilidad
         shadowRadius: 4,
         elevation: 3,
+        // Añadimos un borde por defecto para garantizar visibilidad en temas claros
+        borderWidth: 0.5,
+        borderColor: 'rgba(0, 0, 0, 0.05)',
     },
 });
 

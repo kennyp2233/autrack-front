@@ -20,9 +20,10 @@ const StaticHeader: React.FC<StaticHeaderProps> = ({
 }) => {
     const router = useRouter();
 
-    // Si no se proporciona un tema, usamos valores predeterminados
+    // Usamos valores que garantizan buen contraste por defecto
     const headerBg = theme?.primary || '#333333';
-    const textColor = theme?.navbarText || '#FFFFFF';
+    // Siempre usamos blanco para el texto sobre fondos oscuros para garantizar contraste
+    const textColor = '#FFFFFF';
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: headerBg }]}>
@@ -33,6 +34,8 @@ const StaticHeader: React.FC<StaticHeaderProps> = ({
                         style={styles.backButton}
                         onPress={() => router.back()}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Volver atrás"
                     >
                         <Feather name="arrow-left" size={24} color={textColor} />
                     </TouchableOpacity>
@@ -40,7 +43,11 @@ const StaticHeader: React.FC<StaticHeaderProps> = ({
                     <View style={styles.placeholderWidth} />
                 )}
 
-                <Text style={[styles.title, { color: textColor }]} numberOfLines={1}>
+                <Text
+                    style={[styles.title, { color: textColor }]}
+                    numberOfLines={1}
+                    accessibilityRole="header"
+                >
                     {title}
                 </Text>
 
@@ -49,6 +56,7 @@ const StaticHeader: React.FC<StaticHeaderProps> = ({
                         style={styles.rightButton}
                         onPress={onRightIconPress}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        accessibilityRole="button"
                     >
                         <Feather name={rightIcon as any} size={24} color={textColor} />
                     </TouchableOpacity>
@@ -67,12 +75,12 @@ const styles = StyleSheet.create({
         width: '100%',
         borderBottomLeftRadius: 15,
         borderBottomRightRadius: 15,
-        // Sombra para dar efecto de elevación
+        // Sombra mejorada para dar mejor efecto de elevación
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
+        shadowOpacity: 0.25, // Aumentada para mejor visibilidad
         shadowRadius: 4,
-        elevation: 5,
+        elevation: 6, // Aumentado para mejor visibilidad en Android
         zIndex: 10,
     },
     statusBarPlaceholder: {
@@ -87,9 +95,11 @@ const styles = StyleSheet.create({
     },
     backButton: {
         padding: 8,
+        borderRadius: 20, // Añadido para mejorar el área táctil visual
     },
     rightButton: {
         padding: 8,
+        borderRadius: 20, // Añadido para mejorar el área táctil visual
     },
     title: {
         fontSize: 18,

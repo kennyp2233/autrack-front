@@ -1,54 +1,87 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useColorScheme } from 'react-native';
 
-// Define theme colors para coincidir con el diseño mostrado en la imagen
-export const lightTheme = {
-    primary: '#333333', // Color oscuro para el header
-    background: '#F5F5F5', // Color de fondo gris claro
-    card: '#FFFFFF',
-    text: '#333333', // Texto principal oscuro
-    secondaryText: '#666666', // Texto secundario gris
-    border: '#E5E7EB',
-    notification: '#F24E1E', // Color rojo para notificaciones
-    success: '#4CAF50', // Verde para barras de progreso/éxito
-    warning: '#FFC107', // Amarillo para alertas moderadas/advertencias
-    urgent: '#F24E1E', // Rojo para alertas urgentes
-    scheduled: '#FFC107', // Amarillo para eventos programados
-    completed: '#4CAF50', // Verde para completados
-    iconBackground: '#FFFFFF', // Fondo de iconos blanco
-    progressBarBackground: '#E5E7EB', // Fondo de barra de progreso gris claro
-    progressBarFill: '#4CAF50', // Relleno de barra de progreso verde
-    tabBarActive: '#9D8B70', // Color activo de tab bar beige/marrón claro
-    tabBarInactive: '#AEAEAE', // Color inactivo de tab bar gris
-    navbarBackground: '#FFFFFF', // Fondo de navbar blanco
-    navbarText: '#B5A48A', // Texto de navbar en color beige/marrón más claro
-    buttonPrimary: '#9D8B70', // Color de botón primario beige/marrón
-    buttonSecondary: '#E5E7EB', // Color de botón secundario gris claro
-};
+// Base colors
+const baseColors = {
+    primary: '#333333',
+    secondary: '#9D8B70',
+    success: '#4CAF50',
+    warning: '#E6A700',  // Más oscuro que el original para mejor contraste
+    danger: '#F24E1E',
+    background: '#F5F5F5',
+    cardBackground: '#FFFFFF',
+    textPrimary: '#333333',
+    textSecondary: '#555555', // Más oscuro que el original para mejor contraste
+    border: '#D1D5DB',        // Más oscuro que el original
+}
 
+// Light theme
+export const lightTheme = {
+    // Base colors
+    primary: baseColors.primary,
+    secondary: baseColors.secondary,
+    success: baseColors.success,
+    warning: baseColors.warning,
+    danger: baseColors.danger,
+
+    // Backgrounds
+    background: baseColors.background,
+    card: baseColors.cardBackground,
+
+    // Text
+    text: baseColors.textPrimary,
+    secondaryText: baseColors.textSecondary,
+
+    // UI Elements
+    border: baseColors.border,
+    notification: baseColors.danger,
+    progressBarBackground: baseColors.border,
+    progressBarFill: baseColors.success,
+
+    // Navigation
+    tabBarActive: baseColors.secondary,
+    tabBarInactive: '#888888',   // Más oscuro para mejor contraste
+    navbarBackground: baseColors.cardBackground,
+    navbarText: '#A28B69',        // Tono medio para mantener estética con mejor contraste
+
+    // States
+    scheduled: baseColors.warning,
+    completed: baseColors.success,
+}
+
+// Dark theme - derivado de los mismos colores base pero ajustado para modo oscuro
 export const darkTheme = {
-    primary: '#1A1A24', // Un color más oscuro para el header, menos azulado
-    background: '#121218', // Fondo oscuro con un toque gris
-    card: '#222230', // Color de tarjeta un poco más claro que el fondo
-    text: '#FFFFFF', // Texto principal blanco
-    secondaryText: '#B0B0B0', // Texto secundario gris claro
-    border: '#2D2D3A', // Bordes sutilmente visibles
-    notification: '#FF6B6B', // Rojo vibrante para notificaciones
-    success: '#4ECB71', // Verde más vibrante 
-    warning: '#FFC857', // Amarillo más vibrante
-    urgent: '#FF6B6B', // Rojo para alertas urgentes
-    scheduled: '#FFC857', // Amarillo para programados
-    completed: '#4ECB71', // Verde para completados
-    iconBackground: '#2D2D3A', // Fondo de iconos ligeramente más claro
-    progressBarBackground: '#2D2D3A', // Fondo de barra ligeramente visible
-    progressBarFill: '#4ECB71', // Verde vibrante para progreso
-    tabBarActive: '#D4C5A9', // Versión más clara del beige/marrón para mejor visibilidad
-    tabBarInactive: '#8C8C8C', // Gris medio para elementos inactivos
-    navbarBackground: '#1A1A24', // Fondo de navbar consistente
-    navbarText: '#D4C5A9', // Texto en color beige/marrón más claro
-    buttonPrimary: '#D4C5A9', // Color de botón primario más claro
-    buttonSecondary: '#2D2D3A', // Color de botón secundario
-};
+    // Base colors (ajustados para modo oscuro)
+    primary: '#1A1A24',
+    secondary: '#D4C5A9',  // Versión más clara para mejor contraste en oscuro
+    success: '#4ECB71',
+    warning: '#FFC857',
+    danger: '#FF6B6B',
+
+    // Backgrounds
+    background: '#121218',
+    card: '#222230',
+
+    // Text
+    text: '#FFFFFF',
+    secondaryText: '#CCCCCC',  // Más claro para mejor contraste
+
+    // UI Elements
+    border: '#2D2D3A',
+    notification: '#FF6B6B',
+    progressBarBackground: '#2D2D3A',
+    progressBarFill: '#4ECB71',
+
+    // Navigation
+    tabBarActive: '#D4C5A9',
+    tabBarInactive: '#8C8C8C',
+    navbarBackground: '#1A1A24',
+    navbarText: '#D4C5A9',
+
+    // States
+    scheduled: '#FFC857',
+    completed: '#4ECB71',
+}
 
 // Create the theme context
 type ThemeType = typeof lightTheme;

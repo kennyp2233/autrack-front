@@ -37,19 +37,26 @@ const VehicleCarousel: React.FC<VehicleCarouselProps> = ({
         }
     };
 
+    // Usamos colores fallback con buen contraste en caso de que el tema no esté disponible
+    const backgroundColor = theme?.card || '#FFFFFF';
+    const textColor = theme?.text || '#333333';
+    const secondaryTextColor = theme?.secondaryText || '#555555';
+    const primaryColor = theme?.primary || '#333333';
+    const buttonTextColor = '#FFFFFF'; // Siempre blanco para garantizar contraste sobre fondos oscuros
+
     // If no vehicles available
     if (vehicles.length === 0) {
         return (
-            <View style={[styles.emptyVehicle, { backgroundColor: theme?.card || 'white' }]}>
-                <Feather name="truck" size={40} color={theme?.secondaryText || "#999"} />
-                <Text style={[styles.emptyText, { color: theme?.secondaryText || "#666" }]}>
+            <View style={[styles.emptyVehicle, { backgroundColor }]}>
+                <Feather name="truck" size={40} color={secondaryTextColor} />
+                <Text style={[styles.emptyText, { color: secondaryTextColor }]}>
                     No tienes vehículos registrados
                 </Text>
                 <TouchableOpacity
-                    style={[styles.addButton, { backgroundColor: theme?.primary || "#3B82F6" }]}
+                    style={[styles.addButton, { backgroundColor: primaryColor }]}
                     onPress={() => router.push('/vehicles/add')}
                 >
-                    <Text style={[styles.addButtonText, { color: theme?.navbarText || "white" }]}>
+                    <Text style={[styles.addButtonText, { color: buttonTextColor }]}>
                         Agregar Vehículo
                     </Text>
                 </TouchableOpacity>
@@ -66,7 +73,7 @@ const VehicleCarousel: React.FC<VehicleCarouselProps> = ({
                 style={[
                     styles.navButton,
                     activeIndex === 0 && styles.navButtonDisabled,
-                    { backgroundColor: theme?.card || 'white' }
+                    { backgroundColor }
                 ]}
                 onPress={handlePrevVehicle}
                 disabled={activeIndex === 0}
@@ -74,7 +81,7 @@ const VehicleCarousel: React.FC<VehicleCarouselProps> = ({
                 <Feather
                     name="chevron-left"
                     size={24}
-                    color={activeIndex === 0 ? (theme?.border || "#ccc") : (theme?.text || "#333")}
+                    color={activeIndex === 0 ? (theme?.border || "#CCCCCC") : textColor}
                 />
             </TouchableOpacity>
 
@@ -88,7 +95,7 @@ const VehicleCarousel: React.FC<VehicleCarouselProps> = ({
                 style={[
                     styles.navButton,
                     activeIndex === vehicles.length - 1 && styles.navButtonDisabled,
-                    { backgroundColor: theme?.card || 'white' }
+                    { backgroundColor }
                 ]}
                 onPress={handleNextVehicle}
                 disabled={activeIndex === vehicles.length - 1}
@@ -96,7 +103,7 @@ const VehicleCarousel: React.FC<VehicleCarouselProps> = ({
                 <Feather
                     name="chevron-right"
                     size={24}
-                    color={activeIndex === vehicles.length - 1 ? (theme?.border || "#ccc") : (theme?.text || "#333")}
+                    color={activeIndex === vehicles.length - 1 ? (theme?.border || "#CCCCCC") : textColor}
                 />
             </TouchableOpacity>
         </View>

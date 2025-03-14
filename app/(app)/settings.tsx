@@ -36,6 +36,19 @@ export default function SettingsScreen() {
         { code: 'en', name: 'English' }
     ];
 
+    // Definir colores con valores por defecto que garantizan buen contraste
+    const textColor = appTheme?.text || '#333333';
+    const secondaryTextColor = appTheme?.secondaryText || '#555555'; // Mejorado para contraste
+    const borderColor = appTheme?.border || '#E0E0E0'; // Más visible
+    const primaryColor = appTheme?.primary || '#333333';
+    const cardBgColor = appTheme?.card || '#FFFFFF';
+    const dangerColor = '#DC2626'; // Rojo más oscuro para mejor contraste
+
+    // Color de fondo para opciones seleccionadas
+    const selectedBgColor = isDark
+        ? `${primaryColor}33` // Añadir transparencia al color primario en modo oscuro 
+        : '#EBF5FF'; // Azul muy claro para tema claro
+
     // Formatear el nombre de las opciones
     const getThemeName = (value: string) => {
         switch (value) {
@@ -119,86 +132,86 @@ export default function SettingsScreen() {
 
             <ScrollView style={styles.content}>
                 {/* Profile Section */}
-                <View style={[styles.section, { backgroundColor: appTheme.card }]}>
-                    <Text style={[styles.sectionTitle, { color: appTheme.secondaryText }]}>Perfil</Text>
+                <View style={[styles.section, { backgroundColor: cardBgColor }]}>
+                    <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>Perfil</Text>
                     <TouchableOpacity
                         style={styles.profileButton}
                         onPress={() => router.push('/profile')}
                     >
                         <View style={styles.profileInfo}>
-                            <View style={[styles.avatar, { backgroundColor: appTheme.primary }]}>
-                                <Text style={[styles.avatarText, { color: appTheme.navbarText }]}>
+                            <View style={[styles.avatar, { backgroundColor: primaryColor }]}>
+                                <Text style={[styles.avatarText, { color: '#FFFFFF' }]}>
                                     {user?.fullName?.charAt(0) || 'U'}
                                 </Text>
                             </View>
                             <View>
-                                <Text style={[styles.profileName, { color: appTheme.text }]}>
+                                <Text style={[styles.profileName, { color: textColor }]}>
                                     {user?.fullName || 'Usuario'}
                                 </Text>
-                                <Text style={[styles.profileEmail, { color: appTheme.secondaryText }]}>
+                                <Text style={[styles.profileEmail, { color: secondaryTextColor }]}>
                                     {user?.email || 'usuario@ejemplo.com'}
                                 </Text>
                             </View>
                         </View>
-                        <Feather name="chevron-right" size={20} color={appTheme.secondaryText} />
+                        <Feather name="chevron-right" size={20} color={secondaryTextColor} />
                     </TouchableOpacity>
                 </View>
 
                 {/* Notifications Section */}
-                <View style={[styles.section, { backgroundColor: appTheme.card }]}>
-                    <Text style={[styles.sectionTitle, { color: appTheme.secondaryText }]}>Notificaciones</Text>
-                    <View style={[styles.settingItem, { borderTopColor: appTheme.border }]}>
-                        <Text style={[styles.settingLabel, { color: appTheme.text }]}>Correo electrónico</Text>
+                <View style={[styles.section, { backgroundColor: cardBgColor }]}>
+                    <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>Notificaciones</Text>
+                    <View style={[styles.settingItem, { borderTopColor: borderColor }]}>
+                        <Text style={[styles.settingLabel, { color: textColor }]}>Correo electrónico</Text>
                         <Switch
                             value={notifications.email}
                             onValueChange={(value) => setNotifications({ ...notifications, email: value })}
-                            trackColor={{ false: '#767577', true: appTheme.tabBarActive }}
-                            thumbColor={notifications.email ? appTheme.primary : '#f4f3f4'}
+                            trackColor={{ false: '#767577', true: appTheme.tabBarActive || '#3B82F6' }}
+                            thumbColor={notifications.email ? primaryColor : '#f4f3f4'}
                         />
                     </View>
-                    <View style={[styles.settingItem, { borderTopColor: appTheme.border }]}>
-                        <Text style={[styles.settingLabel, { color: appTheme.text }]}>Push</Text>
+                    <View style={[styles.settingItem, { borderTopColor: borderColor }]}>
+                        <Text style={[styles.settingLabel, { color: textColor }]}>Push</Text>
                         <Switch
                             value={notifications.push}
                             onValueChange={(value) => setNotifications({ ...notifications, push: value })}
-                            trackColor={{ false: '#767577', true: appTheme.tabBarActive }}
-                            thumbColor={notifications.push ? appTheme.primary : '#f4f3f4'}
+                            trackColor={{ false: '#767577', true: appTheme.tabBarActive || '#3B82F6' }}
+                            thumbColor={notifications.push ? primaryColor : '#f4f3f4'}
                         />
                     </View>
                 </View>
 
                 {/* Preferences Section */}
-                <View style={[styles.section, { backgroundColor: appTheme.card }]}>
-                    <Text style={[styles.sectionTitle, { color: appTheme.secondaryText }]}>Preferencias</Text>
+                <View style={[styles.section, { backgroundColor: cardBgColor }]}>
+                    <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>Preferencias</Text>
 
                     {/* Currency */}
                     <View>
                         <TouchableOpacity
-                            style={[styles.settingItem, { borderTopColor: appTheme.border }]}
+                            style={[styles.settingItem, { borderTopColor: borderColor }]}
                             onPress={() => setShowCurrencyOptions(!showCurrencyOptions)}
                         >
-                            <Text style={[styles.settingLabel, { color: appTheme.text }]}>Moneda</Text>
+                            <Text style={[styles.settingLabel, { color: textColor }]}>Moneda</Text>
                             <View style={styles.settingValue}>
-                                <Text style={{ color: appTheme.text }}>{getCurrencyName(currency)}</Text>
+                                <Text style={{ color: textColor }}>{getCurrencyName(currency)}</Text>
                                 <Feather
                                     name={showCurrencyOptions ? "chevron-up" : "chevron-down"}
                                     size={16}
-                                    color={appTheme.secondaryText}
-                                    style={{ marginLeft: 4 }}
+                                    color={secondaryTextColor}
+                                    style={{ marginLeft: 8 }}
                                 />
                             </View>
                         </TouchableOpacity>
                         {showCurrencyOptions && (
-                            <View style={[styles.optionsContainer, { borderTopColor: appTheme.border }]}>
+                            <View style={[styles.optionsContainer, { borderTopColor: borderColor }]}>
                                 {currencies.map((option) => (
                                     <TouchableOpacity
                                         key={option}
                                         style={[
                                             styles.option,
-                                            { borderTopColor: appTheme.border },
+                                            { borderTopColor: borderColor },
                                             currency === option && [
                                                 styles.selectedOption,
-                                                { backgroundColor: isDark ? appTheme.card : '#f0f9ff' }
+                                                { backgroundColor: selectedBgColor }
                                             ]
                                         ]}
                                         onPress={() => {
@@ -206,9 +219,9 @@ export default function SettingsScreen() {
                                             setShowCurrencyOptions(false);
                                         }}
                                     >
-                                        <Text style={{ color: appTheme.text }}>{getCurrencyName(option)}</Text>
+                                        <Text style={{ color: textColor }}>{getCurrencyName(option)}</Text>
                                         {currency === option && (
-                                            <Feather name="check" size={16} color={appTheme.primary} />
+                                            <Feather name="check" size={16} color={primaryColor} />
                                         )}
                                     </TouchableOpacity>
                                 ))}
@@ -219,31 +232,31 @@ export default function SettingsScreen() {
                     {/* Units */}
                     <View>
                         <TouchableOpacity
-                            style={[styles.settingItem, { borderTopColor: appTheme.border }]}
+                            style={[styles.settingItem, { borderTopColor: borderColor }]}
                             onPress={() => setShowUnitsOptions(!showUnitsOptions)}
                         >
-                            <Text style={[styles.settingLabel, { color: appTheme.text }]}>Unidad de kilometraje</Text>
+                            <Text style={[styles.settingLabel, { color: textColor }]}>Unidad de kilometraje</Text>
                             <View style={styles.settingValue}>
-                                <Text style={{ color: appTheme.text }}>{getUnitName(units)}</Text>
+                                <Text style={{ color: textColor }}>{getUnitName(units)}</Text>
                                 <Feather
                                     name={showUnitsOptions ? "chevron-up" : "chevron-down"}
                                     size={16}
-                                    color={appTheme.secondaryText}
-                                    style={{ marginLeft: 4 }}
+                                    color={secondaryTextColor}
+                                    style={{ marginLeft: 8 }}
                                 />
                             </View>
                         </TouchableOpacity>
                         {showUnitsOptions && (
-                            <View style={[styles.optionsContainer, { borderTopColor: appTheme.border }]}>
+                            <View style={[styles.optionsContainer, { borderTopColor: borderColor }]}>
                                 {unitOptions.map((option) => (
                                     <TouchableOpacity
                                         key={option}
                                         style={[
                                             styles.option,
-                                            { borderTopColor: appTheme.border },
+                                            { borderTopColor: borderColor },
                                             units === option && [
                                                 styles.selectedOption,
-                                                { backgroundColor: isDark ? appTheme.card : '#f0f9ff' }
+                                                { backgroundColor: selectedBgColor }
                                             ]
                                         ]}
                                         onPress={() => {
@@ -251,9 +264,9 @@ export default function SettingsScreen() {
                                             setShowUnitsOptions(false);
                                         }}
                                     >
-                                        <Text style={{ color: appTheme.text }}>{getUnitName(option)}</Text>
+                                        <Text style={{ color: textColor }}>{getUnitName(option)}</Text>
                                         {units === option && (
-                                            <Feather name="check" size={16} color={appTheme.primary} />
+                                            <Feather name="check" size={16} color={primaryColor} />
                                         )}
                                     </TouchableOpacity>
                                 ))}
@@ -264,38 +277,38 @@ export default function SettingsScreen() {
                     {/* Theme */}
                     <View>
                         <TouchableOpacity
-                            style={[styles.settingItem, { borderTopColor: appTheme.border }]}
+                            style={[styles.settingItem, { borderTopColor: borderColor }]}
                             onPress={() => setShowThemeOptions(!showThemeOptions)}
                         >
-                            <Text style={[styles.settingLabel, { color: appTheme.text }]}>Tema</Text>
+                            <Text style={[styles.settingLabel, { color: textColor }]}>Tema</Text>
                             <View style={styles.settingValue}>
-                                <Text style={{ color: appTheme.text }}>{getThemeName(themeMode)}</Text>
+                                <Text style={{ color: textColor }}>{getThemeName(themeMode)}</Text>
                                 <Feather
                                     name={showThemeOptions ? "chevron-up" : "chevron-down"}
                                     size={16}
-                                    color={appTheme.secondaryText}
-                                    style={{ marginLeft: 4 }}
+                                    color={secondaryTextColor}
+                                    style={{ marginLeft: 8 }}
                                 />
                             </View>
                         </TouchableOpacity>
                         {showThemeOptions && (
-                            <View style={[styles.optionsContainer, { borderTopColor: appTheme.border }]}>
+                            <View style={[styles.optionsContainer, { borderTopColor: borderColor }]}>
                                 {themeOptions.map((option) => (
                                     <TouchableOpacity
                                         key={option}
                                         style={[
                                             styles.option,
-                                            { borderTopColor: appTheme.border },
+                                            { borderTopColor: borderColor },
                                             themeMode === option && [
                                                 styles.selectedOption,
-                                                { backgroundColor: isDark ? appTheme.card : '#f0f9ff' }
+                                                { backgroundColor: selectedBgColor }
                                             ]
                                         ]}
                                         onPress={() => handleThemeChange(option)}
                                     >
-                                        <Text style={{ color: appTheme.text }}>{getThemeName(option)}</Text>
+                                        <Text style={{ color: textColor }}>{getThemeName(option)}</Text>
                                         {themeMode === option && (
-                                            <Feather name="check" size={16} color={appTheme.primary} />
+                                            <Feather name="check" size={16} color={primaryColor} />
                                         )}
                                     </TouchableOpacity>
                                 ))}
@@ -306,33 +319,33 @@ export default function SettingsScreen() {
                     {/* Language */}
                     <View>
                         <TouchableOpacity
-                            style={[styles.settingItem, { borderTopColor: appTheme.border }]}
+                            style={[styles.settingItem, { borderTopColor: borderColor }]}
                             onPress={() => setShowLanguageOptions(!showLanguageOptions)}
                         >
-                            <Text style={[styles.settingLabel, { color: appTheme.text }]}>Idioma</Text>
+                            <Text style={[styles.settingLabel, { color: textColor }]}>Idioma</Text>
                             <View style={styles.settingValue}>
-                                <Text style={{ color: appTheme.text }}>
+                                <Text style={{ color: textColor }}>
                                     {languageOptions.find(opt => opt.code === language)?.name || language}
                                 </Text>
                                 <Feather
                                     name={showLanguageOptions ? "chevron-up" : "chevron-down"}
                                     size={16}
-                                    color={appTheme.secondaryText}
-                                    style={{ marginLeft: 4 }}
+                                    color={secondaryTextColor}
+                                    style={{ marginLeft: 8 }}
                                 />
                             </View>
                         </TouchableOpacity>
                         {showLanguageOptions && (
-                            <View style={[styles.optionsContainer, { borderTopColor: appTheme.border }]}>
+                            <View style={[styles.optionsContainer, { borderTopColor: borderColor }]}>
                                 {languageOptions.map((option) => (
                                     <TouchableOpacity
                                         key={option.code}
                                         style={[
                                             styles.option,
-                                            { borderTopColor: appTheme.border },
+                                            { borderTopColor: borderColor },
                                             language === option.code && [
                                                 styles.selectedOption,
-                                                { backgroundColor: isDark ? appTheme.card : '#f0f9ff' }
+                                                { backgroundColor: selectedBgColor }
                                             ]
                                         ]}
                                         onPress={() => {
@@ -340,9 +353,9 @@ export default function SettingsScreen() {
                                             setShowLanguageOptions(false);
                                         }}
                                     >
-                                        <Text style={{ color: appTheme.text }}>{option.name}</Text>
+                                        <Text style={{ color: textColor }}>{option.name}</Text>
                                         {language === option.code && (
-                                            <Feather name="check" size={16} color={appTheme.primary} />
+                                            <Feather name="check" size={16} color={primaryColor} />
                                         )}
                                     </TouchableOpacity>
                                 ))}
@@ -352,38 +365,42 @@ export default function SettingsScreen() {
                 </View>
 
                 {/* Account Section */}
-                <View style={[styles.section, { backgroundColor: appTheme.card }]}>
-                    <Text style={[styles.sectionTitle, { color: appTheme.secondaryText }]}>Cuenta</Text>
+                <View style={[styles.section, { backgroundColor: cardBgColor }]}>
+                    <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>Cuenta</Text>
                     <TouchableOpacity
-                        style={[styles.logoutButton, { borderTopColor: appTheme.border }]}
+                        style={[styles.logoutButton, { borderTopColor: borderColor }]}
                         onPress={handleLogout}
                     >
-                        <Feather name="log-out" size={18} color={appTheme.secondaryText} />
-                        <Text style={[styles.logoutButtonText, { color: appTheme.secondaryText }]}>Cerrar sesión</Text>
+                        <Feather name="log-out" size={18} color={isDark ? "#999999" : "#666666"} />
+                        <Text style={[styles.logoutButtonText, { color: isDark ? "#999999" : "#666666" }]}>
+                            Cerrar sesión
+                        </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={[styles.deleteAccountButton, { borderTopColor: appTheme.border }]}
+                        style={[styles.deleteAccountButton, { borderTopColor: borderColor }]}
                         onPress={handleDeleteAccount}
                     >
-                        <Feather name="trash-2" size={18} color="#EF4444" />
-                        <Text style={styles.deleteAccountButtonText}>Eliminar cuenta</Text>
+                        <Feather name="trash-2" size={18} color={dangerColor} />
+                        <Text style={[styles.deleteAccountButtonText, { color: dangerColor }]}>
+                            Eliminar cuenta
+                        </Text>
                     </TouchableOpacity>
                 </View>
 
                 {/* About Section */}
-                <View style={[styles.section, { backgroundColor: appTheme.card }]}>
-                    <Text style={[styles.sectionTitle, { color: appTheme.secondaryText }]}>Acerca de</Text>
-                    <TouchableOpacity style={[styles.aboutItem, { borderTopColor: appTheme.border }]}>
-                        <Text style={[styles.aboutLabel, { color: appTheme.text }]}>Versión</Text>
-                        <Text style={[styles.aboutValue, { color: appTheme.secondaryText }]}>1.0.0</Text>
+                <View style={[styles.section, { backgroundColor: cardBgColor }]}>
+                    <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>Acerca de</Text>
+                    <TouchableOpacity style={[styles.aboutItem, { borderTopColor: borderColor }]}>
+                        <Text style={[styles.aboutLabel, { color: textColor }]}>Versión</Text>
+                        <Text style={[styles.aboutValue, { color: secondaryTextColor }]}>1.0.0</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={[styles.aboutItem, { borderTopColor: appTheme.border }]}>
-                        <Text style={[styles.aboutLabel, { color: appTheme.text }]}>Términos y condiciones</Text>
-                        <Feather name="chevron-right" size={16} color={appTheme.secondaryText} />
+                    <TouchableOpacity style={[styles.aboutItem, { borderTopColor: borderColor }]}>
+                        <Text style={[styles.aboutLabel, { color: textColor }]}>Términos y condiciones</Text>
+                        <Feather name="chevron-right" size={16} color={secondaryTextColor} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={[styles.aboutItem, { borderTopColor: appTheme.border }]}>
-                        <Text style={[styles.aboutLabel, { color: appTheme.text }]}>Política de privacidad</Text>
-                        <Feather name="chevron-right" size={16} color={appTheme.secondaryText} />
+                    <TouchableOpacity style={[styles.aboutItem, { borderTopColor: borderColor }]}>
+                        <Text style={[styles.aboutLabel, { color: textColor }]}>Política de privacidad</Text>
+                        <Feather name="chevron-right" size={16} color={secondaryTextColor} />
                     </TouchableOpacity>
                 </View>
             </ScrollView>
@@ -398,9 +415,18 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         paddingTop: 16,
+        paddingHorizontal: 16,
     },
     section: {
         marginBottom: 16,
+        borderRadius: 8,
+        overflow: 'hidden',
+        // Añadimos sombra sutil para mejor separación visual
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
     },
     sectionTitle: {
         fontSize: 14,
@@ -435,6 +461,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     profileEmail: {
+        marginTop: 2,
     },
     settingItem: {
         flexDirection: 'row',
@@ -462,6 +489,7 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
     },
     selectedOption: {
+        // El fondo se establece dinámicamente
     },
     logoutButton: {
         flexDirection: 'row',
@@ -481,7 +509,6 @@ const styles = StyleSheet.create({
     },
     deleteAccountButtonText: {
         marginLeft: 12,
-        color: '#EF4444',
         fontWeight: '500',
     },
     aboutItem: {

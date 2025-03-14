@@ -11,9 +11,16 @@ const StatsSummary: React.FC<StatsSummaryProps> = ({ maintenanceItems, theme }) 
     // Calculate total maintenance cost
     const totalCost = maintenanceItems.reduce((sum, item) => sum + (item.cost || 0), 0);
 
+    // Definir colores con valores por defecto que garantizan buen contraste
+    const textColor = theme?.text || '#333333';
+    const secondaryTextColor = theme?.secondaryText || '#555555'; // Mejorado para contraste
+    const primaryColor = theme?.primary || '#3B82F6';
+    const borderColor = theme?.border || '#E0E0E0'; // Más visible
+    const cardBgColor = theme?.isDark ? theme?.card : '#f0f0f0'; // Ligeramente más oscuro que el original
+
     return (
         <View>
-            <Text style={[styles.title, { color: theme?.text || '#333' }]}>
+            <Text style={[styles.title, { color: textColor }]}>
                 Estadísticas
             </Text>
 
@@ -21,15 +28,15 @@ const StatsSummary: React.FC<StatsSummaryProps> = ({ maintenanceItems, theme }) 
                 <View style={[
                     styles.statCard,
                     {
-                        backgroundColor: theme?.isDark ? theme?.card : '#f9f9f9',
-                        borderColor: theme?.border || 'transparent',
-                        borderWidth: theme?.isDark ? 1 : 0
+                        backgroundColor: cardBgColor,
+                        borderColor: borderColor,
+                        borderWidth: theme?.isDark ? 1 : 0.5 // Borde sutil para modo claro también
                     }
                 ]}>
-                    <Text style={[styles.statValue, { color: theme?.primary || '#3B82F6' }]}>
+                    <Text style={[styles.statValue, { color: primaryColor }]}>
                         {maintenanceItems.length}
                     </Text>
-                    <Text style={[styles.statLabel, { color: theme?.secondaryText || '#666' }]}>
+                    <Text style={[styles.statLabel, { color: secondaryTextColor }]}>
                         Mantenimientos Totales
                     </Text>
                 </View>
@@ -37,15 +44,15 @@ const StatsSummary: React.FC<StatsSummaryProps> = ({ maintenanceItems, theme }) 
                 <View style={[
                     styles.statCard,
                     {
-                        backgroundColor: theme?.isDark ? theme?.card : '#f9f9f9',
-                        borderColor: theme?.border || 'transparent',
-                        borderWidth: theme?.isDark ? 1 : 0
+                        backgroundColor: cardBgColor,
+                        borderColor: borderColor,
+                        borderWidth: theme?.isDark ? 1 : 0.5 // Borde sutil para modo claro también
                     }
                 ]}>
-                    <Text style={[styles.statValue, { color: theme?.primary || '#3B82F6' }]}>
+                    <Text style={[styles.statValue, { color: primaryColor }]}>
                         ${totalCost}
                     </Text>
-                    <Text style={[styles.statLabel, { color: theme?.secondaryText || '#666' }]}>
+                    <Text style={[styles.statLabel, { color: secondaryTextColor }]}>
                         Gasto Total
                     </Text>
                 </View>
@@ -70,6 +77,12 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: 8,
         marginHorizontal: 4,
+        // Añadida sombra sutil para mejorar separación visual en modo claro
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1,
     },
     statValue: {
         fontWeight: 'bold',

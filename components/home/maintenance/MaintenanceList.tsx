@@ -17,10 +17,16 @@ const MaintenanceList: React.FC<MaintenanceListProps> = ({
     onViewAll,
     theme
 }) => {
+    // Definir colores con valores por defecto que garantizan buen contraste
+    const textColor = theme?.text || '#333333';
+    const secondaryTextColor = theme?.secondaryText || '#555555'; // Más oscuro que el original para mejor contraste
+    const primaryColor = theme?.primary || '#3B82F6';
+    const borderColor = theme?.border || '#E0E0E0'; // Más oscuro para mejor visibilidad
+
     if (maintenanceItems.length === 0) {
         return (
             <View style={styles.emptyState}>
-                <Text style={[styles.emptyText, { color: theme?.secondaryText || '#666' }]}>
+                <Text style={[styles.emptyText, { color: secondaryTextColor }]}>
                     No hay mantenimientos programados
                 </Text>
             </View>
@@ -30,12 +36,12 @@ const MaintenanceList: React.FC<MaintenanceListProps> = ({
     return (
         <View>
             <View style={styles.header}>
-                <Text style={[styles.title, { color: theme?.text || '#333' }]}>
+                <Text style={[styles.title, { color: textColor }]}>
                     Próximos Mantenimientos
                 </Text>
                 {onViewAll && (
                     <TouchableOpacity onPress={onViewAll}>
-                        <Text style={[styles.viewAllText, { color: theme?.primary || '#3B82F6' }]}>
+                        <Text style={[styles.viewAllText, { color: primaryColor }]}>
                             Ver todos
                         </Text>
                     </TouchableOpacity>
@@ -45,22 +51,22 @@ const MaintenanceList: React.FC<MaintenanceListProps> = ({
             {maintenanceItems.map((item) => (
                 <TouchableOpacity
                     key={item.id}
-                    style={[styles.maintenanceItem, { borderBottomColor: theme?.border || '#eee' }]}
+                    style={[styles.maintenanceItem, { borderBottomColor: borderColor }]}
                     onPress={() => onItemPress(item.vehicleId, item.id)}
                 >
                     <View style={styles.maintenanceInfo}>
-                        <Text style={[styles.maintenanceType, { color: theme?.text || '#333' }]}>
+                        <Text style={[styles.maintenanceType, { color: textColor }]}>
                             {item.type}
                         </Text>
-                        <Text style={[styles.maintenanceVehicle, { color: theme?.secondaryText || '#666' }]}>
+                        <Text style={[styles.maintenanceVehicle, { color: secondaryTextColor }]}>
                             {getVehicleName(item.vehicleId)}
                         </Text>
                     </View>
                     <View style={styles.maintenanceDate}>
-                        <Text style={[styles.maintenanceDateText, { color: theme?.text || '#333' }]}>
+                        <Text style={[styles.maintenanceDateText, { color: textColor }]}>
                             {item.date}
                         </Text>
-                        <Text style={[styles.maintenanceDaysLeft, { color: theme?.secondaryText || '#666' }]}>
+                        <Text style={[styles.maintenanceDaysLeft, { color: secondaryTextColor }]}>
                             Próximamente
                         </Text>
                     </View>
@@ -83,6 +89,7 @@ const styles = StyleSheet.create({
     },
     viewAllText: {
         fontSize: 14,
+        fontWeight: '500', // Añadido peso para mejorar legibilidad
     },
     maintenanceItem: {
         flexDirection: 'row',
@@ -117,7 +124,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     emptyText: {
-        color: '#666',
+        fontSize: 14, // Especificado para consistencia
     },
 });
 

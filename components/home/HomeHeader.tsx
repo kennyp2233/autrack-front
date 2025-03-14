@@ -71,6 +71,9 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
         extrapolate: 'clamp'
     });
 
+    // Aseguramos colores de alto contraste para texto sobre el fondo primario
+    const textColor = '#FFFFFF'; // Blanco para garantizar contraste sobre fondos oscuros
+
     return (
         <Animated.View
             style={[
@@ -91,7 +94,7 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                                 styles.greeting,
                                 {
                                     opacity: greetingOpacity,
-                                    color: theme.navbarText
+                                    color: textColor
                                 }
                             ]}
                         >
@@ -105,7 +108,7 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                                         { scale: nameScale },
                                         { translateY: nameTranslateY }
                                     ],
-                                    color: theme.navbarText
+                                    color: textColor
                                 }
                             ]}
                         >
@@ -117,9 +120,17 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                         style={[styles.notificationButton, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}
                         onPress={handleNotificationPress}
                     >
-                        <Feather name="bell" size={24} color={theme.navbarText} />
-                        <View style={[styles.notificationBadge, { backgroundColor: theme.notification }]}>
-                            <Text style={[styles.notificationBadgeText, { color: theme.navbarText }]}>2</Text>
+                        <Feather name="bell" size={24} color={textColor} />
+                        <View
+                            style={[
+                                styles.notificationBadge,
+                                {
+                                    backgroundColor: theme.notification,
+                                    borderColor: theme.primary
+                                }
+                            ]}
+                        >
+                            <Text style={[styles.notificationBadgeText, { color: textColor }]}>2</Text>
                         </View>
                     </TouchableOpacity>
                 </View>
@@ -185,7 +196,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: 'white',
     },
     notificationBadgeText: {
         fontSize: 10,
