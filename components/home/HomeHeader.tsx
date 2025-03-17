@@ -1,73 +1,100 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Platform, StatusBar, Animated } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Platform, StatusBar, Animated, Easing } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 
 interface HomeHeaderProps {
     onNotificationPress?: () => void;
-    onProfilePress?: () => void;
     scrollY: Animated.Value;
-    theme: any; // Idealmente definiríamos un tipo ThemeType específico
+    theme: any;
 }
 
-// Mantenemos las mismas constantes del diseño original
-const HEADER_MAX_HEIGHT = 200;
+// Constantes para la animación del header
+const HEADER_MAX_HEIGHT = 220;
 const HEADER_MIN_HEIGHT = 80;
 const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
 
 const HomeHeader: React.FC<HomeHeaderProps> = ({
     onNotificationPress,
-    onProfilePress,
     scrollY,
     theme
 }) => {
     const { user } = useAuth();
+    const router = useRouter();
     const [notificationCount, setNotificationCount] = useState(2);
-    const [timeOfDay, setTimeOfDay] = useState('');
+    const [greeting, setGreeting] = useState('');
+    const bellShakeAnim = useRef(new Animated.Value(0)).current;
 
-    // Actualizar la hora del día al iniciar
+    // Actualizar saludo y hora al iniciar
     useEffect(() => {
-        updateTimeOfDay();
-        // Opcionalmente: Configurar un intervalo para actualizar el saludo durante una sesión larga
-        const intervalId = setInterval(updateTimeOfDay, 60000);
-        return () => clearInterval(intervalId);
-    }, []);
+        updateGreetingAndTime();
+        const intervalId = setInterval(updateGreetingAndTime, 60000);
 
-    // Obtener saludo según hora del día
-    const updateTimeOfDay = () => {
-        const hour = new Date().getHours();
-        if (hour >= 5 && hour < 12) {
-            setTimeOfDay('Buenos días');
-        } else if (hour >= 12 && hour < 19) {
-            setTimeOfDay('Buenas tardes');
-        } else {
-            setTimeOfDay('Buenas noches');
+        // Animar el icono de notificación si hay notificaciones
+        if (notificationCount > 0) {
+            startBellAnimation();
         }
+
+        return () => clearInterval(intervalId);
+    }, [notificationCount]);
+
+    // Obtener saludo según hora del día y formatear hora actual
+    const updateGreetingAndTime = () => {
+        const now = new Date();
+        const hour = now.getHours();
+
+        // Establecer saludo
+        if (hour >= 5 && hour < 12) {
+            setGreeting('Buenos días');
+        } else if (hour >= 12 && hour < 19) {
+            setGreeting('Buenas tardes');
+        } else {
+            setGreeting('Buenas noches');
+        }
+
     };
 
-    // Get user's first name for greeting
-    const firstName = user?.fullName ? user.fullName.split(' ')[0] : 'Usuario';
+    // Animar el icono de campana
+    const startBellAnimation = () => {
+        Animated.sequence([
+            Animated.timing(bellShakeAnim, {
+                toValue: 1,
+                duration: 300,
+                easing: Easing.bounce,
+                useNativeDriver: true
+            }),
+            Animated.timing(bellShakeAnim, {
+                toValue: 0,
+                duration: 300,
+                easing: Easing.bounce,
+                useNativeDriver: true
+            })
+        ]).start();
+    };
 
-    // Handle notification press
+    // Obtener nombre del usuario
+    const firstName = user?.fullName
+        ? user.fullName.split(' ')[0]
+        : 'Usuario';
+
+    // Manejar click en notificaciones
     const handleNotificationPress = () => {
         if (onNotificationPress) {
             onNotificationPress();
         } else {
-            console.log('Notification pressed');
+            // Simulación: limpiar notificaciones
+            setNotificationCount(0);
         }
     };
 
-    // Handle profile press
+    // Manejar click en perfil
     const handleProfilePress = () => {
-        if (onProfilePress) {
-            onProfilePress();
-        } else {
-            console.log('Profile pressed');
-        }
+        router.push('/profile');
     };
 
-    // Animaciones basadas en el valor de scroll (manteniendo los originales)
+    // Animaciones basadas en el scroll
     const headerHeight = scrollY.interpolate({
         inputRange: [0, HEADER_SCROLL_DISTANCE],
         outputRange: [HEADER_MAX_HEIGHT, HEADER_MIN_HEIGHT],
@@ -76,19 +103,25 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
 
     const headerOpacity = scrollY.interpolate({
         inputRange: [0, HEADER_SCROLL_DISTANCE / 2, HEADER_SCROLL_DISTANCE],
-        outputRange: [1, 0.8, 0.6],
-        extrapolate: 'clamp'
-    });
-
-    const headerScale = scrollY.interpolate({
-        inputRange: [0, HEADER_SCROLL_DISTANCE],
-        outputRange: [1, 0.95],
+        outputRange: [1, 0.9, 0.8],
         extrapolate: 'clamp'
     });
 
     const greetingOpacity = scrollY.interpolate({
-        inputRange: [0, HEADER_SCROLL_DISTANCE / 2, HEADER_SCROLL_DISTANCE],
-        outputRange: [1, 0.5, 0],
+        inputRange: [0, HEADER_SCROLL_DISTANCE / 2],
+        outputRange: [1, 0],
+        extrapolate: 'clamp'
+    });
+
+    const greetingTranslateY = scrollY.interpolate({
+        inputRange: [0, HEADER_SCROLL_DISTANCE],
+        outputRange: [0, -20],
+        extrapolate: 'clamp'
+    });
+
+    const nameOpacity = scrollY.interpolate({
+        inputRange: [0, HEADER_SCROLL_DISTANCE / 1.5, HEADER_SCROLL_DISTANCE],
+        outputRange: [1, 1, 0.8],
         extrapolate: 'clamp'
     });
 
@@ -100,8 +133,14 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
 
     const nameTranslateY = scrollY.interpolate({
         inputRange: [0, HEADER_SCROLL_DISTANCE],
-        outputRange: [0, -5],
+        outputRange: [0, -10],
         extrapolate: 'clamp'
+    });
+
+    // Animación de vibración para el icono de notificación
+    const bellShake = bellShakeAnim.interpolate({
+        inputRange: [0, 0.3, 0.5, 0.7, 1],
+        outputRange: [0, -3, 0, 3, 0]
     });
 
     // Colores para el gradiente basados en el tema
@@ -109,8 +148,8 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
         ? [theme.primary, `${theme.primary}E6`, `${theme.primary}80`]
         : [theme.primary, `${theme.primary}F2`, `${theme.primary}CC`];
 
-    // Aseguramos colores de alto contraste para texto sobre el fondo primario
-    const textColor = '#FFFFFF'; // Blanco para garantizar contraste sobre fondos oscuros
+    // Color de texto (siempre blanco para garantizar contraste)
+    const textColor = '#FFFFFF';
 
     return (
         <Animated.View
@@ -119,11 +158,10 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                 {
                     height: headerHeight,
                     opacity: headerOpacity,
-                    transform: [{ scale: headerScale }],
                 }
             ]}
         >
-            {/* Gradiente para mejorar la apariencia del header */}
+            {/* Gradiente de fondo con efecto de profundidad */}
             <LinearGradient
                 colors={gradientColors}
                 style={StyleSheet.absoluteFill}
@@ -133,26 +171,29 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
 
             <SafeAreaView style={styles.safeArea}>
                 <View style={styles.headerContent}>
-                    <TouchableOpacity
-                        activeOpacity={0.8}
-                        onPress={handleProfilePress}
-                        style={styles.profileSection}
-                    >
+                    {/* Sección de información del usuario */}
+                    <View style={styles.profileSection}>
+
+                        {/* Saludo según hora del día */}
                         <Animated.Text
                             style={[
                                 styles.greeting,
                                 {
                                     opacity: greetingOpacity,
+                                    transform: [{ translateY: greetingTranslateY }],
                                     color: textColor
                                 }
                             ]}
                         >
-                            {timeOfDay}
+                            {greeting}
                         </Animated.Text>
+
+                        {/* Nombre del usuario */}
                         <Animated.Text
                             style={[
                                 styles.userName,
                                 {
+                                    opacity: nameOpacity,
                                     transform: [
                                         { scale: nameScale },
                                         { translateY: nameTranslateY }
@@ -163,31 +204,63 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                         >
                             {firstName}
                         </Animated.Text>
-                    </TouchableOpacity>
+                    </View>
 
-                    <TouchableOpacity
-                        style={[styles.notificationButton, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}
-                        onPress={handleNotificationPress}
-                        activeOpacity={0.7}
-                    >
-                        <Feather name="bell" size={24} color={textColor} />
-                        {notificationCount > 0 && (
-                            <View
-                                style={[
-                                    styles.notificationBadge,
-                                    {
-                                        backgroundColor: theme.notification || theme.danger,
-                                        borderColor: 'rgba(255, 255, 255, 0.3)'
-                                    }
-                                ]}
+                    {/* Botones de acciones */}
+                    <View style={styles.actionsContainer}>
+                        {/* Botón de perfil */}
+                        <TouchableOpacity
+                            style={[styles.actionButton, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}
+                            onPress={handleProfilePress}
+                            activeOpacity={0.7}
+                        >
+                            <Feather name="user" size={22} color={textColor} />
+                        </TouchableOpacity>
+
+                        {/* Botón de notificaciones con animación */}
+                        <TouchableOpacity
+                            style={[styles.actionButton,
+                            { backgroundColor: 'rgba(255, 255, 255, 0.2)', marginLeft: 12 }
+                            ]}
+                            onPress={handleNotificationPress}
+                            activeOpacity={0.7}
+                        >
+                            <Animated.View
+                                style={{
+                                    transform: [{ translateX: bellShake }]
+                                }}
                             >
-                                <Text style={[styles.notificationBadgeText, { color: textColor }]}>
-                                    {notificationCount}
-                                </Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
+                                <Feather name="bell" size={22} color={textColor} />
+                                {notificationCount > 0 && (
+                                    <View
+                                        style={[
+                                            styles.notificationBadge,
+                                            {
+                                                backgroundColor: theme.notification || theme.danger,
+                                            }
+                                        ]}
+                                    >
+                                        <Text style={styles.notificationBadgeText}>
+                                            {notificationCount}
+                                        </Text>
+                                    </View>
+                                )}
+                            </Animated.View>
+                        </TouchableOpacity>
+                    </View>
                 </View>
+
+                {/* Indicador visual para scroll */}
+                <Animated.View
+                    style={[
+                        styles.scrollIndicator,
+                        {
+                            opacity: greetingOpacity,
+                        }
+                    ]}
+                >
+                    <View style={styles.scrollIndicatorLine} />
+                </Animated.View>
             </SafeAreaView>
         </Animated.View>
     );
@@ -195,19 +268,18 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
 
 const styles = StyleSheet.create({
     headerContainer: {
-        borderBottomLeftRadius: 30,
-        borderBottomRightRadius: 30,
-        overflow: 'hidden',
         position: 'absolute',
         left: 0,
         right: 0,
         top: 0,
-        zIndex: 1,
-        // Sombra para dar efecto de elevación
+        zIndex: 10,
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
+        overflow: 'hidden',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.3,
-        shadowRadius: 8,
+        shadowRadius: 10,
         elevation: 8,
     },
     safeArea: {
@@ -219,23 +291,27 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'flex-start',
         paddingHorizontal: 20,
-        paddingTop: 20,
-        paddingBottom: 30,
+        paddingTop: Platform.OS === 'ios' ? 12 : 16,
         flex: 1,
     },
     profileSection: {
         flex: 1,
     },
+
     greeting: {
         fontSize: 24,
         fontWeight: 'bold',
-        marginBottom: 4,
+        marginBottom: 6,
     },
     userName: {
-        opacity: 0.9,
-        fontSize: 18,
+        fontSize: 20,
+        fontWeight: '600',
     },
-    notificationButton: {
+    actionsContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    actionButton: {
         width: 42,
         height: 42,
         borderRadius: 21,
@@ -245,19 +321,35 @@ const styles = StyleSheet.create({
     },
     notificationBadge: {
         position: 'absolute',
-        top: -4,
-        right: -4,
-        width: 20,
-        height: 20,
-        borderRadius: 10,
+        top: -5,
+        right: -5,
+        minWidth: 18,
+        height: 18,
+        paddingHorizontal: 4,
+        borderRadius: 9,
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 1,
+        borderWidth: 2,
+        borderColor: 'rgba(255, 255, 255, 0.9)',
     },
     notificationBadgeText: {
         fontSize: 10,
         fontWeight: 'bold',
+        color: 'white',
     },
+    scrollIndicator: {
+        position: 'absolute',
+        bottom: 10,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+    },
+    scrollIndicatorLine: {
+        width: 36,
+        height: 5,
+        borderRadius: 3,
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    }
 });
 
 export default HomeHeader;

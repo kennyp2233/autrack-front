@@ -12,7 +12,7 @@ import MaintenanceList from '@/components/home/maintenance/MaintenanceList';
 import StatsSummary from '@/components/home/stats-summary/StatsSummaryt';
 
 // Definimos las alturas del header para mantener la consistencia con HomeHeader.tsx
-const HEADER_MAX_HEIGHT = 220;
+const HEADER_MAX_HEIGHT = 200;
 const HEADER_MIN_HEIGHT = 80;
 const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
 const NAVBAR_HEIGHT = 80; // Altura del navbar según CustomBottomNav.tsx

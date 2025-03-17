@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Dimensions, ScrollView } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Vehicle } from '@/types/Vehicle';
@@ -8,8 +8,10 @@ import VehicleCard from './VehicleCard';
 interface VehicleCarouselProps {
     vehicles: Vehicle[];
     onViewAll: () => void;
-    theme: any; // Tipo del tema
+    theme: any;
 }
+
+const CARD_WIDTH = Dimensions.get('window').width - 145; // Ancho de tarjeta con margen
 
 const VehicleCarousel: React.FC<VehicleCarouselProps> = ({
     vehicles,
@@ -18,34 +20,89 @@ const VehicleCarousel: React.FC<VehicleCarouselProps> = ({
 }) => {
     const router = useRouter();
     const [activeIndex, setActiveIndex] = useState(0);
+    const scrollViewRef = useRef<ScrollView>(null);
 
-    // Handle vehicle selection
+    // Animación para los botones de navegación
+    const buttonScaleAnim = useRef(new Animated.Value(1)).current;
+
+    // Animar botón al presionar
+    const animateButtonPress = () => {
+        Animated.sequence([
+            Animated.timing(buttonScaleAnim, {
+                toValue: 0.9,
+                duration: 100,
+                useNativeDriver: true,
+            }),
+            Animated.timing(buttonScaleAnim, {
+                toValue: 1,
+                duration: 100,
+                useNativeDriver: true,
+            }),
+        ]).start();
+    };
+
+    // Manejar presión en vehículo
     const handleVehiclePress = (vehicleId: number) => {
         router.push(`/vehicles/${vehicleId}`);
     };
 
-    // Handle carousel navigation
+    // Manejar navegación del carrusel
     const handlePrevVehicle = () => {
         if (activeIndex > 0) {
-            setActiveIndex(activeIndex - 1);
+            const newIndex = activeIndex - 1;
+            setActiveIndex(newIndex);
+            scrollToIndex(newIndex);
+            animateButtonPress();
         }
     };
 
     const handleNextVehicle = () => {
         if (activeIndex < vehicles.length - 1) {
-            setActiveIndex(activeIndex + 1);
+            const newIndex = activeIndex + 1;
+            setActiveIndex(newIndex);
+            scrollToIndex(newIndex);
+            animateButtonPress();
         }
     };
+
+    // Función para desplazar al índice
+    const scrollToIndex = (index: number) => {
+        scrollViewRef.current?.scrollTo({
+            x: index * CARD_WIDTH,
+            animated: true
+        });
+    };
+
+    // Detectar cambio de índice por scroll
+    const handleScroll = (event: any) => {
+        const contentOffsetX = event.nativeEvent.contentOffset.x;
+        const newIndex = Math.round(contentOffsetX / CARD_WIDTH);
+
+        if (newIndex !== activeIndex) {
+            setActiveIndex(newIndex);
+        }
+    };
+
+    // Efecto para inicializar scroll
+    useEffect(() => {
+        if (vehicles.length > 0 && scrollViewRef.current) {
+            scrollToIndex(activeIndex);
+        }
+    }, []);
 
     // Renderizar el encabezado de la sección
     const renderSectionHeader = () => (
         <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                Mis Vehículos
-            </Text>
+            <View style={styles.titleContainer}>
+                <Feather name="truck" size={18} color={theme.primary} style={styles.sectionIcon} />
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                    Mis Vehículos
+                </Text>
+            </View>
             <TouchableOpacity
                 style={styles.viewAllButton}
                 onPress={onViewAll}
+                activeOpacity={0.7}
             >
                 <Text style={[styles.viewAllText, { color: theme.primary }]}>Ver todos</Text>
                 <Feather name="chevron-right" size={16} color={theme.primary} />
@@ -53,7 +110,7 @@ const VehicleCarousel: React.FC<VehicleCarouselProps> = ({
         </View>
     );
 
-    // If no vehicles available
+    // Si no hay vehículos disponibles
     if (vehicles.length === 0) {
         return (
             <View>
@@ -66,7 +123,9 @@ const VehicleCarousel: React.FC<VehicleCarouselProps> = ({
                     <TouchableOpacity
                         style={[styles.addButton, { backgroundColor: theme.primary }]}
                         onPress={() => router.push('/vehicles/add')}
+                        activeOpacity={0.8}
                     >
+                        <Feather name="plus" size={16} color="white" style={styles.addButtonIcon} />
                         <Text style={styles.addButtonText}>
                             Agregar Vehículo
                         </Text>
@@ -76,70 +135,109 @@ const VehicleCarousel: React.FC<VehicleCarouselProps> = ({
         );
     }
 
-    // Current vehicle
-    const currentVehicle = vehicles[activeIndex];
-
     return (
         <View>
             {renderSectionHeader()}
 
             <View style={styles.carouselContainer}>
-                <TouchableOpacity
-                    style={[
-                        styles.navButton,
-                        activeIndex === 0 && styles.navButtonDisabled,
-                        { backgroundColor: theme.card }
-                    ]}
-                    onPress={handlePrevVehicle}
-                    disabled={activeIndex === 0}
-                >
-                    <Feather
-                        name="chevron-left"
-                        size={24}
-                        color={activeIndex === 0 ? theme.border : theme.text}
-                    />
-                </TouchableOpacity>
+                {/* Botón Anterior */}
+                <Animated.View style={{ transform: [{ scale: buttonScaleAnim }] }}>
+                    <TouchableOpacity
+                        style={[
+                            styles.navButton,
+                            activeIndex === 0 && styles.navButtonDisabled,
+                            { backgroundColor: theme.card }
+                        ]}
+                        onPress={handlePrevVehicle}
+                        disabled={activeIndex === 0}
+                        activeOpacity={0.7}
+                    >
+                        <Feather
+                            name="chevron-left"
+                            size={22}
+                            color={activeIndex === 0 ? theme.border : theme.text}
+                        />
+                    </TouchableOpacity>
+                </Animated.View>
 
-                <VehicleCard
-                    vehicle={currentVehicle}
-                    onPress={() => handleVehiclePress(currentVehicle.id)}
-                    theme={theme}
-                />
-
-                <TouchableOpacity
-                    style={[
-                        styles.navButton,
-                        activeIndex === vehicles.length - 1 && styles.navButtonDisabled,
-                        { backgroundColor: theme.card }
-                    ]}
-                    onPress={handleNextVehicle}
-                    disabled={activeIndex === vehicles.length - 1}
+                {/* Carrusel de tarjetas */}
+                <ScrollView
+                    ref={scrollViewRef}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    pagingEnabled
+                    decelerationRate="fast"
+                    snapToInterval={CARD_WIDTH}
+                    snapToAlignment="center"
+                    contentContainerStyle={styles.scrollViewContent}
+                    onMomentumScrollEnd={handleScroll}
+                    scrollEventThrottle={16}
                 >
-                    <Feather
-                        name="chevron-right"
-                        size={24}
-                        color={activeIndex === vehicles.length - 1 ? theme.border : theme.text}
-                    />
-                </TouchableOpacity>
+                    {vehicles.map((vehicle, index) => (
+                        <View key={vehicle.id} style={styles.cardContainer}>
+                            <VehicleCard
+                                vehicle={vehicle}
+                                onPress={handleVehiclePress}
+                                theme={theme}
+                            />
+                        </View>
+                    ))}
+                </ScrollView>
+
+                {/* Botón Siguiente */}
+                <Animated.View style={{ transform: [{ scale: buttonScaleAnim }] }}>
+                    <TouchableOpacity
+                        style={[
+                            styles.navButton,
+                            activeIndex === vehicles.length - 1 && styles.navButtonDisabled,
+                            { backgroundColor: theme.card }
+                        ]}
+                        onPress={handleNextVehicle}
+                        disabled={activeIndex === vehicles.length - 1}
+                        activeOpacity={0.7}
+                    >
+                        <Feather
+                            name="chevron-right"
+                            size={22}
+                            color={activeIndex === vehicles.length - 1 ? theme.border : theme.text}
+                        />
+                    </TouchableOpacity>
+                </Animated.View>
             </View>
 
             {/* Indicadores de paginación */}
             {vehicles.length > 1 && (
                 <View style={styles.pagination}>
                     {vehicles.map((_, index) => (
-                        <View
+                        <TouchableOpacity
                             key={index}
-                            style={[
-                                styles.paginationDot,
-                                {
-                                    backgroundColor: index === activeIndex
-                                        ? theme.primary
-                                        : theme.border
-                                }
-                            ]}
-                        />
+                            onPress={() => {
+                                setActiveIndex(index);
+                                scrollToIndex(index);
+                            }}
+                            activeOpacity={0.8}
+                        >
+                            <View
+                                style={[
+                                    styles.paginationDot,
+                                    {
+                                        width: index === activeIndex ? 20 : 8,
+                                        backgroundColor: index === activeIndex
+                                            ? theme.primary
+                                            : theme.border
+                                    }
+                                ]}
+                            />
+                        </TouchableOpacity>
                     ))}
                 </View>
+            )}
+
+            {/* Contador de vehículos */}
+            {vehicles.length > 1 && (
+                <Text style={[styles.vehicleCounter, { color: theme.secondaryText }]}>
+                    {activeIndex + 1} de {vehicles.length}
+                </Text>
             )}
         </View>
     );
@@ -150,7 +248,14 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 16,
+    },
+    titleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    sectionIcon: {
+        marginRight: 8,
     },
     sectionTitle: {
         fontSize: 18,
@@ -159,6 +264,8 @@ const styles = StyleSheet.create({
     viewAllButton: {
         flexDirection: 'row',
         alignItems: 'center',
+        paddingVertical: 4,
+        paddingHorizontal: 2,
     },
     viewAllText: {
         fontWeight: '500',
@@ -167,20 +274,25 @@ const styles = StyleSheet.create({
     carouselContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 12,
+    },
+    scrollViewContent: {
+        paddingHorizontal: 4,
+    },
+    cardContainer: {
+        width: CARD_WIDTH,
     },
     navButton: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 38,
+        height: 38,
+        borderRadius: 19,
         justifyContent: 'center',
         alignItems: 'center',
-        // Shadow for the button
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
-        shadowRadius: 2,
-        elevation: 2,
+        shadowRadius: 3,
+        elevation: 3,
     },
     navButtonDisabled: {
         opacity: 0.5,
@@ -188,29 +300,41 @@ const styles = StyleSheet.create({
     pagination: {
         flexDirection: 'row',
         justifyContent: 'center',
+        alignItems: 'center',
         marginTop: 8,
     },
     paginationDot: {
-        width: 8,
         height: 8,
         borderRadius: 4,
         marginHorizontal: 4,
     },
+    vehicleCounter: {
+        textAlign: 'center',
+        fontSize: 12,
+        marginTop: 6,
+    },
     emptyVehicle: {
         alignItems: 'center',
         padding: 24,
-        borderRadius: 12,
+        borderRadius: 16,
         borderWidth: 1,
         borderStyle: 'dashed',
+        marginBottom: 16,
     },
     emptyText: {
-        marginVertical: 8,
+        marginVertical: 12,
+        textAlign: 'center',
     },
     addButton: {
-        paddingVertical: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
         paddingHorizontal: 16,
         borderRadius: 8,
         marginTop: 8,
+    },
+    addButtonIcon: {
+        marginRight: 8,
     },
     addButtonText: {
         fontWeight: 'bold',

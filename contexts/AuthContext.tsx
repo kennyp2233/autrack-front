@@ -46,9 +46,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
             } else if (user && inAuthGroup) {
                 // Redirigir al dashboard si el usuario está autenticado
                 //router.replace('/(app)');
-
             }
-            router.replace('/(app)');
+            router.replace('/(auth)/login');
+
         }
     }, [user, segments, isLoading]);
 

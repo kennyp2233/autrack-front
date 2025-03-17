@@ -143,7 +143,7 @@ export default function LoginScreen() {
                     >
                         <View style={[
                             styles.checkbox,
-                            { 
+                            {
                                 borderColor: rememberMe ? primaryColor : borderColor,
                                 backgroundColor: rememberMe ? primaryColor : 'transparent'
                             }
@@ -163,7 +163,7 @@ export default function LoginScreen() {
                 {/* Login Button */}
                 <TouchableOpacity
                     style={[
-                        styles.loginButton, 
+                        styles.loginButton,
                         { backgroundColor: isLoading ? `${primaryColor}80` : primaryColor }
                     ]}
                     onPress={handleLogin}
