@@ -1,141 +1,42 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+// contexts/VehiclesContext.tsx
+import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
+import { Alert } from 'react-native';
 import { Vehicle, VehicleFormData } from '../types/Vehicle';
 import { Maintenance, MaintenanceFormData } from '../types/Maintenance';
+import { VehicleService, MaintenanceService } from '@/api';
 
 interface VehiclesContextType {
     vehicles: Vehicle[];
     maintenance: Maintenance[];
+    isLoading: boolean;
+    error: string | null;
+    refreshData: () => Promise<void>;
     getVehicle: (id: number) => Vehicle | undefined;
     getVehicleMaintenance: (vehicleId: number) => Maintenance[];
     getMaintenance: (id: number) => Maintenance | undefined;
-    addVehicle: (vehicleData: VehicleFormData) => Vehicle;
-    updateVehicle: (id: number, vehicleData: Partial<VehicleFormData>) => Vehicle | undefined;
-    deleteVehicle: (id: number) => boolean;
-    addMaintenance: (maintenanceData: MaintenanceFormData) => Maintenance;
-    updateMaintenance: (id: number, maintenanceData: Partial<MaintenanceFormData>) => Maintenance | undefined;
-    deleteMaintenance: (id: number) => boolean;
+    addVehicle: (vehicleData: VehicleFormData) => Promise<Vehicle>;
+    updateVehicle: (id: number, vehicleData: Partial<VehicleFormData>) => Promise<Vehicle | undefined>;
+    deleteVehicle: (id: number) => Promise<boolean>;
+    addMaintenance: (maintenanceData: MaintenanceFormData) => Promise<Maintenance>;
+    updateMaintenance: (id: number, maintenanceData: Partial<MaintenanceFormData>) => Promise<Maintenance | undefined>;
+    deleteMaintenance: (id: number) => Promise<boolean>;
 }
-
-// Datos iniciales para desarrollo
-const initialVehicles: Vehicle[] = [
-    {
-        id: 1,
-        userId: 1,
-        brand: 'Toyota',
-        model: 'Corolla',
-        year: 2019,
-        plate: 'ABC-123',
-        mileage: 35000,
-        lastMaintenance: '15/01/2025',
-        nextMaintenance: '15/03/2025',
-        fuelType: 'Gasolina',
-        color: '#3B82F6',
-        vinNumber: 'JT2AE09W3P0031365',
-        purchaseDate: '10/05/2019',
-        createdAt: '2023-01-01T00:00:00Z',
-        updatedAt: '2023-01-01T00:00:00Z',
-        isActive: true
-    },
-    {
-        id: 2,
-        userId: 1,
-        brand: 'Honda',
-        model: 'Civic',
-        year: 2020,
-        plate: 'XYZ-789',
-        mileage: 28000,
-        lastMaintenance: '02/02/2025',
-        nextMaintenance: '02/04/2025',
-        fuelType: 'Gasolina',
-        color: '#10B981',
-        vinNumber: 'JHMEH9694PS000494',
-        purchaseDate: '20/07/2020',
-        createdAt: '2023-02-01T00:00:00Z',
-        updatedAt: '2023-02-01T00:00:00Z',
-        isActive: true
-    }
-];
-
-const initialMaintenance: Maintenance[] = [
-    {
-        id: 1,
-        vehicleId: 1,
-        type: 'Cambio de Aceite',
-        date: '2025-01-15',
-        mileage: 32500,
-        cost: 180,
-        location: 'Servicio Oficial Toyota',
-        notes: 'Aceite sintético 5W-30, filtro de aceite nuevo',
-        photos: ['photo1.jpg', 'photo2.jpg'],
-        status: 'completed',
-        createdAt: '2023-01-15T00:00:00Z',
-        updatedAt: '2023-01-15T00:00:00Z'
-    },
-    {
-        id: 2,
-        vehicleId: 1,
-        type: 'Revisión de Frenos',
-        date: '2024-12-12',
-        mileage: 30000,
-        cost: 250,
-        location: 'Frenos Express',
-        notes: 'Cambio de pastillas delanteras y revisión de discos',
-        photos: ['photo3.jpg'],
-        status: 'completed',
-        createdAt: '2022-12-12T00:00:00Z',
-        updatedAt: '2022-12-12T00:00:00Z'
-    },
-    {
-        id: 3,
-        vehicleId: 1,
-        type: 'Alineación y Balanceo',
-        date: '2024-11-05',
-        mileage: 28000,
-        cost: 120,
-        location: 'Neumáticos del Sur',
-        notes: 'Rotación de neumáticos incluida',
-        status: 'completed',
-        createdAt: '2022-11-05T00:00:00Z',
-        updatedAt: '2022-11-05T00:00:00Z'
-    },
-    {
-        id: 4,
-        vehicleId: 2,
-        type: 'Cambio de Aceite',
-        date: '2025-02-03',
-        mileage: 15000,
-        cost: 150,
-        location: 'Servicio Rápido',
-        status: 'completed',
-        createdAt: '2023-02-03T00:00:00Z',
-        updatedAt: '2023-02-03T00:00:00Z'
-    },
-    {
-        id: 5,
-        vehicleId: 2,
-        type: 'Revisión General',
-        date: '2024-12-20',
-        mileage: 12000,
-        cost: 320,
-        location: 'Taller Multimarca',
-        status: 'completed',
-        createdAt: '2022-12-20T00:00:00Z',
-        updatedAt: '2022-12-20T00:00:00Z'
-    }
-];
 
 export const VehiclesContext = createContext<VehiclesContextType>({
     vehicles: [],
     maintenance: [],
+    isLoading: false,
+    error: null,
+    refreshData: async () => { },
     getVehicle: () => undefined,
     getVehicleMaintenance: () => [],
     getMaintenance: () => undefined,
-    addVehicle: () => ({} as Vehicle),
-    updateVehicle: () => undefined,
-    deleteVehicle: () => false,
-    addMaintenance: () => ({} as Maintenance),
-    updateMaintenance: () => undefined,
-    deleteMaintenance: () => false
+    addVehicle: async () => ({} as Vehicle),
+    updateVehicle: async () => undefined,
+    deleteVehicle: async () => false,
+    addMaintenance: async () => ({} as Maintenance),
+    updateMaintenance: async () => undefined,
+    deleteMaintenance: async () => false
 });
 
 interface VehiclesProviderProps {
@@ -143,8 +44,49 @@ interface VehiclesProviderProps {
 }
 
 export function VehiclesProvider({ children }: VehiclesProviderProps) {
-    const [vehicles, setVehicles] = useState<Vehicle[]>(initialVehicles);
-    const [maintenance, setMaintenance] = useState<Maintenance[]>(initialMaintenance);
+    const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+    const [maintenance, setMaintenance] = useState<Maintenance[]>([]);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
+
+    // Cargar todos los datos al inicio
+    const loadData = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            // Cargar vehículos
+            const vehiclesData = await VehicleService.getAllVehicles();
+            setVehicles(vehiclesData.filter(v => v.isActive));
+
+            // Cargar mantenimientos de todos los vehículos
+            let allMaintenance: Maintenance[] = [];
+
+            for (const vehicle of vehiclesData) {
+                if (vehicle.isActive) {
+                    const vehicleMaintenance = await MaintenanceService.getMaintenanceByVehicle(vehicle.id);
+                    allMaintenance = [...allMaintenance, ...vehicleMaintenance];
+                }
+            }
+
+            setMaintenance(allMaintenance);
+        } catch (err) {
+            console.error('Error al cargar datos:', err);
+            setError('Error al cargar los datos. Inténtalo de nuevo.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    // Cargar datos al montar el componente
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    // Función para actualizar los datos
+    const refreshData = async () => {
+        await loadData();
+    };
 
     // Obtener un vehículo por ID
     const getVehicle = (id: number) => {
@@ -162,121 +104,151 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
     };
 
     // Añadir un nuevo vehículo
-    const addVehicle = (vehicleData: VehicleFormData) => {
-        const newId = vehicles.length > 0 ? Math.max(...vehicles.map(v => v.id)) + 1 : 1;
-        const now = new Date().toISOString();
-
-        const newVehicle: Vehicle = {
-            id: newId,
-            userId: 1, // Usuario de ejemplo
-            ...vehicleData,
-            mileage: Number(vehicleData.mileage),
-            year: Number(vehicleData.year),
-            createdAt: now,
-            updatedAt: now,
-            isActive: true
-        };
-
-        setVehicles([...vehicles, newVehicle]);
-        return newVehicle;
+    const addVehicle = async (vehicleData: VehicleFormData) => {
+        setIsLoading(true);
+        try {
+            const newVehicle = await VehicleService.createVehicle(vehicleData);
+            setVehicles(prev => [...prev, newVehicle]);
+            return newVehicle;
+        } catch (err) {
+            console.error('Error al añadir vehículo:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Error al añadir vehículo';
+            setError(errorMessage);
+            Alert.alert('Error', errorMessage);
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     // Actualizar un vehículo existente
-    const updateVehicle = (id: number, vehicleData: Partial<VehicleFormData>) => {
+    const updateVehicle = async (id: number, vehicleData: Partial<VehicleFormData>) => {
         const vehicle = getVehicle(id);
         if (!vehicle) return undefined;
 
-        const updatedVehicle: Vehicle = {
-            ...vehicle,
-            ...vehicleData,
-            mileage: vehicleData.mileage ? Number(vehicleData.mileage) : vehicle.mileage,
-            year: vehicleData.year ? Number(vehicleData.year) : vehicle.year,
-            updatedAt: new Date().toISOString()
-        };
-
-        setVehicles(vehicles.map(v => v.id === id ? updatedVehicle : v));
-        return updatedVehicle;
+        setIsLoading(true);
+        try {
+            const updatedVehicle = await VehicleService.updateVehicle(id, vehicleData);
+            setVehicles(vehicles.map(v => v.id === id ? updatedVehicle : v));
+            return updatedVehicle;
+        } catch (err) {
+            console.error('Error al actualizar vehículo:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Error al actualizar vehículo';
+            setError(errorMessage);
+            Alert.alert('Error', errorMessage);
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     // Eliminar un vehículo
-    const deleteVehicle = (id: number) => {
+    const deleteVehicle = async (id: number) => {
         const vehicle = getVehicle(id);
         if (!vehicle) return false;
 
-        // Marcar como inactivo en lugar de eliminar físicamente
-        const updatedVehicle: Vehicle = {
-            ...vehicle,
-            isActive: false,
-            updatedAt: new Date().toISOString()
-        };
+        setIsLoading(true);
+        try {
+            await VehicleService.deleteVehicle(id);
 
-        setVehicles(vehicles.map(v => v.id === id ? updatedVehicle : v));
-        return true;
+            // Eliminar de la lista local (o marcar como inactivo)
+            setVehicles(vehicles.map(v =>
+                v.id === id ? { ...v, isActive: false } : v
+            ));
+            return true;
+        } catch (err) {
+            console.error('Error al eliminar vehículo:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Error al eliminar vehículo';
+            setError(errorMessage);
+            Alert.alert('Error', errorMessage);
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     // Añadir un nuevo mantenimiento
-    const addMaintenance = (maintenanceData: MaintenanceFormData) => {
-        const newId = maintenance.length > 0 ? Math.max(...maintenance.map(m => m.id)) + 1 : 1;
-        const now = new Date().toISOString();
+    const addMaintenance = async (maintenanceData: MaintenanceFormData) => {
+        setIsLoading(true);
+        try {
+            const newMaintenance = await MaintenanceService.createMaintenance(maintenanceData);
+            setMaintenance(prev => [...prev, newMaintenance]);
 
-        const newMaintenance: Maintenance = {
-            id: newId,
-            ...maintenanceData,
-            mileage: Number(maintenanceData.mileage),
-            cost: maintenanceData.cost ? Number(maintenanceData.cost) : undefined,
-            status: 'completed',
-            createdAt: now,
-            updatedAt: now
-        };
+            // Actualizar información del vehículo si es necesario
+            const vehicle = getVehicle(newMaintenance.vehicleId);
+            if (vehicle) {
+                // Calculamos la fecha del próximo mantenimiento (ejemplo: 3 meses después)
+                const nextDate = new Date(newMaintenance.date);
+                nextDate.setMonth(nextDate.getMonth() + 3);
+                const nextDateStr = nextDate.toISOString().split('T')[0];
 
-        setMaintenance([...maintenance, newMaintenance]);
+                await updateVehicle(vehicle.id, {
+                    lastMaintenance: newMaintenance.date,
+                    nextMaintenance: nextDateStr,
+                    mileage: newMaintenance.mileage
+                });
+            }
 
-        // Actualizar el último mantenimiento y el próximo en el vehículo
-        const vehicle = getVehicle(newMaintenance.vehicleId);
-        if (vehicle) {
-            // Calcular la fecha del próximo mantenimiento (ejemplo: 3 meses después)
-            const nextDate = new Date(newMaintenance.date);
-            nextDate.setMonth(nextDate.getMonth() + 3);
-
-            updateVehicle(vehicle.id, {
-                lastMaintenance: newMaintenance.date,
-                nextMaintenance: nextDate.toISOString().split('T')[0],
-                mileage: newMaintenance.mileage
-            });
+            return newMaintenance;
+        } catch (err) {
+            console.error('Error al añadir mantenimiento:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Error al añadir mantenimiento';
+            setError(errorMessage);
+            Alert.alert('Error', errorMessage);
+            throw err;
+        } finally {
+            setIsLoading(false);
         }
-
-        return newMaintenance;
     };
 
     // Actualizar un mantenimiento existente
-    const updateMaintenance = (id: number, maintenanceData: Partial<MaintenanceFormData>) => {
+    const updateMaintenance = async (id: number, maintenanceData: Partial<MaintenanceFormData>) => {
         const existingMaintenance = getMaintenance(id);
         if (!existingMaintenance) return undefined;
 
-        const updatedMaintenance: Maintenance = {
-            ...existingMaintenance,
-            ...maintenanceData,
-            mileage: maintenanceData.mileage ? Number(maintenanceData.mileage) : existingMaintenance.mileage,
-            cost: maintenanceData.cost ? Number(maintenanceData.cost) : existingMaintenance.cost,
-            updatedAt: new Date().toISOString()
-        };
-
-        setMaintenance(maintenance.map(m => m.id === id ? updatedMaintenance : m));
-        return updatedMaintenance;
+        setIsLoading(true);
+        try {
+            const updatedMaintenance = await MaintenanceService.updateMaintenance(id, maintenanceData);
+            setMaintenance(maintenance.map(m => m.id === id ? updatedMaintenance : m));
+            return updatedMaintenance;
+        } catch (err) {
+            console.error('Error al actualizar mantenimiento:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Error al actualizar mantenimiento';
+            setError(errorMessage);
+            Alert.alert('Error', errorMessage);
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     // Eliminar un mantenimiento
-    const deleteMaintenance = (id: number) => {
-        const exists = getMaintenance(id);
-        if (!exists) return false;
+    const deleteMaintenance = async (id: number) => {
+        const existingMaintenance = getMaintenance(id);
+        if (!existingMaintenance) return false;
 
-        setMaintenance(maintenance.filter(m => m.id !== id));
-        return true;
+        setIsLoading(true);
+        try {
+            await MaintenanceService.deleteMaintenance(id);
+            setMaintenance(maintenance.filter(m => m.id !== id));
+            return true;
+        } catch (err) {
+            console.error('Error al eliminar mantenimiento:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Error al eliminar mantenimiento';
+            setError(errorMessage);
+            Alert.alert('Error', errorMessage);
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const value = {
         vehicles,
         maintenance,
+        isLoading,
+        error,
+        refreshData,
         getVehicle,
         getVehicleMaintenance,
         getMaintenance,
