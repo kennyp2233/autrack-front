@@ -1,30 +1,60 @@
-// services/api/config.ts
+// api/config.ts
+import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Configuración base de la API
-export const API_BASE_URL = 'http://localhost:3000/api/v1'; // Cambia esto por la URL correcta del servidor
+// Obtener URL base del servidor desde variables de entorno o usar valor por defecto
+export const API_BASE_URL = Constants.manifest?.extra?.apiUrl || 'https://192.168.100.39:3443/api/v1';
 
-// Almacenamiento del token JWT
+// Clave para almacenar el token en AsyncStorage
+const AUTH_TOKEN_KEY = 'auth_token';
+
+// Almacenamiento del token JWT en memoria
 let authToken: string | null = null;
+
+/**
+ * Carga el token de autenticación desde AsyncStorage al iniciar la aplicación
+ */
+export const loadAuthToken = async (): Promise<string | null> => {
+  try {
+    const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+    if (token) {
+      authToken = token;
+    }
+    return token;
+  } catch (error) {
+    console.error('Error al cargar el token de autenticación:', error);
+    return null;
+  }
+};
 
 /**
  * Establece el token de autenticación para las peticiones a la API
  * @param token Token JWT a utilizar en las peticiones
  */
-export const setAuthToken = (token: string | null) => {
-  authToken = token;
+export const setAuthToken = async (token: string | null): Promise<void> => {
+  try {
+    authToken = token;
+    if (token) {
+      await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
+    } else {
+      await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
+    }
+  } catch (error) {
+    console.error('Error al guardar el token de autenticación:', error);
+  }
 };
 
 /**
  * Obtiene el token actual de autenticación
  */
-export const getAuthToken = () => {
+export const getAuthToken = (): string | null => {
   return authToken;
 };
 
 /**
  * Obtiene los headers necesarios para las peticiones autenticadas
  */
-export const getAuthHeaders = () => {
+export const getAuthHeaders = (): HeadersInit => {
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
   };
@@ -52,20 +82,29 @@ export const apiRequest = async <T>(
   const headers = requiresAuth ? getAuthHeaders() : { 'Content-Type': 'application/json' };
   
   try {
+    console.log(`Requesting: ${API_BASE_URL}${endpoint}`, method, body ? JSON.stringify(body) : 'No body');
+    
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined
     });
 
+    // Obtener texto de la respuesta para depuración
+    const responseText = await response.text();
+    
     // Manejar respuestas de error HTTP
     if (!response.ok) {
+      console.error(`Error en ${method} ${endpoint}:`, responseText);
+      
       let errorMessage = 'Error en la petición';
       try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
+        // Intentar parsear como JSON
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.message || errorData.error || errorMessage;
       } catch (e) {
-        // Si no se puede parsear el JSON, usar el mensaje genérico
+        // Si no se puede parsear el JSON, usar el texto de respuesta
+        errorMessage = responseText || errorMessage;
       }
       
       throw new Error(errorMessage);
@@ -76,7 +115,16 @@ export const apiRequest = async <T>(
       return {} as T;
     }
 
-    return await response.json() as T;
+    // Parsear la respuesta como JSON
+    let responseData: T;
+    try {
+      responseData = responseText ? JSON.parse(responseText) : {};
+    } catch (e) {
+      console.error('Error al parsear respuesta JSON:', e);
+      throw new Error('Formato de respuesta inválido');
+    }
+
+    return responseData;
   } catch (error) {
     console.error(`Error en petición a ${endpoint}:`, error);
     throw error;

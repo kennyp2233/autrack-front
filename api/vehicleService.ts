@@ -1,4 +1,4 @@
-// services/api/vehicleService.ts
+// api/vehicleService.ts
 import { apiRequest } from './config';
 import { Vehicle, VehicleFormData } from '@/types/Vehicle';
 
@@ -11,26 +11,7 @@ export const VehicleService = {
      */
     getAllVehicles: async (): Promise<Vehicle[]> => {
         const response = await apiRequest<any[]>('/vehicles');
-
-        // Transformar la respuesta de la API a nuestro modelo de datos
-        return response.map(item => ({
-            id: item.id_vehiculo,
-            userId: item.id_usuario,
-            brand: item.marca,
-            model: item.modelo,
-            year: item.anio,
-            plate: item.placa || '',
-            mileage: item.kilometraje_actual,
-            fuelType: item.tipo_combustible || '',
-            color: item.color || '#3B82F6',
-            vinNumber: item.numero_vin || '',
-            purchaseDate: item.fecha_compra || '',
-            createdAt: item.fecha_creacion,
-            updatedAt: item.fecha_actualizacion,
-            isActive: item.activo,
-            lastMaintenance: item.ultimo_mantenimiento || '',
-            nextMaintenance: item.proximo_mantenimiento || ''
-        }));
+        return response;
     },
 
     /**
@@ -38,27 +19,8 @@ export const VehicleService = {
      * @param id ID del vehículo
      */
     getVehicleById: async (id: number): Promise<Vehicle> => {
-        const response = await apiRequest<any>(`/vehicles/${id}`);
-
-        // Transformar la respuesta de la API a nuestro modelo de datos
-        return {
-            id: response.id_vehiculo,
-            userId: response.id_usuario,
-            brand: response.marca,
-            model: response.modelo,
-            year: response.anio,
-            plate: response.placa || '',
-            mileage: response.kilometraje_actual,
-            fuelType: response.tipo_combustible || '',
-            color: response.color || '#3B82F6',
-            vinNumber: response.numero_vin || '',
-            purchaseDate: response.fecha_compra || '',
-            createdAt: response.fecha_creacion,
-            updatedAt: response.fecha_actualizacion,
-            isActive: response.activo,
-            lastMaintenance: response.ultimo_mantenimiento || '',
-            nextMaintenance: response.proximo_mantenimiento || ''
-        };
+        const response = await apiRequest<Vehicle>(`/vehicles/${id}`);
+        return response;
     },
 
     /**
@@ -66,48 +28,20 @@ export const VehicleService = {
      * @param vehicleData Datos del vehículo a crear
      */
     createVehicle: async (vehicleData: VehicleFormData): Promise<Vehicle> => {
-        // Por ahora necesitamos obtener los IDs de marca y modelo
-        // Esto debería ser reemplazado por un proceso adecuado
-        const brandId = await VehicleService.getBrandIdByName(vehicleData.brand);
-        const modelId = await VehicleService.getModelIdByName(vehicleData.model, brandId);
-
+        // Adaptamos el objeto para que coincida con la estructura del backend
         const requestData = {
-            id_marca: brandId,
-            id_modelo: modelId,
-            placa: vehicleData.plate,
-            anio: Number(vehicleData.year),
-            kilometraje_actual: Number(vehicleData.mileage),
-            color: vehicleData.color,
-            tipo_combustible: vehicleData.fuelType,
-            numero_vin: vehicleData.vinNumber,
-            fecha_compra: vehicleData.purchaseDate
+            placa: vehicleData.placa,
+            id_marca: vehicleData.id_marca,
+            id_modelo: vehicleData.id_modelo,
+            anio: Number(vehicleData.anio),
+            kilometraje_actual: Number(vehicleData.kilometraje_actual)
         };
 
-        const response = await apiRequest<any>(
+        return await apiRequest<Vehicle>(
             '/vehicles',
             'POST',
             requestData
         );
-
-        // Transformar la respuesta de la API a nuestro modelo de datos
-        return {
-            id: response.id_vehiculo,
-            userId: response.id_usuario,
-            brand: response.marca,
-            model: response.modelo,
-            year: response.anio,
-            plate: response.placa || '',
-            mileage: response.kilometraje_actual,
-            fuelType: response.tipo_combustible || '',
-            color: response.color || '#3B82F6',
-            vinNumber: response.numero_vin || '',
-            purchaseDate: response.fecha_compra || '',
-            createdAt: response.fecha_creacion,
-            updatedAt: response.fecha_actualizacion,
-            isActive: response.activo,
-            lastMaintenance: response.ultimo_mantenimiento || '',
-            nextMaintenance: response.proximo_mantenimiento || ''
-        };
     },
 
     /**
@@ -118,153 +52,95 @@ export const VehicleService = {
     updateVehicle: async (id: number, vehicleData: Partial<VehicleFormData>): Promise<Vehicle> => {
         const requestData: any = {};
 
-        if (vehicleData.plate) requestData.placa = vehicleData.plate;
-        if (vehicleData.year) requestData.anio = Number(vehicleData.year);
-        if (vehicleData.mileage) requestData.kilometraje_actual = Number(vehicleData.mileage);
-        if (vehicleData.color) requestData.color = vehicleData.color;
-        if (vehicleData.fuelType) requestData.tipo_combustible = vehicleData.fuelType;
-        if (vehicleData.vinNumber) requestData.numero_vin = vehicleData.vinNumber;
-        if (vehicleData.purchaseDate) requestData.fecha_compra = vehicleData.purchaseDate;
+        if (vehicleData.placa !== undefined) requestData.placa = vehicleData.placa;
+        if (vehicleData.id_marca !== undefined) requestData.id_marca = vehicleData.id_marca;
+        if (vehicleData.id_modelo !== undefined) requestData.id_modelo = vehicleData.id_modelo;
+        if (vehicleData.anio !== undefined) requestData.anio = Number(vehicleData.anio);
+        if (vehicleData.kilometraje_actual !== undefined) requestData.kilometraje_actual = Number(vehicleData.kilometraje_actual);
 
-        const response = await apiRequest<any>(
+        return await apiRequest<Vehicle>(
             `/vehicles/${id}`,
             'PATCH',
             requestData
         );
-
-        // Transformar la respuesta de la API a nuestro modelo de datos
-        return {
-            id: response.id_vehiculo,
-            userId: response.id_usuario,
-            brand: response.marca,
-            model: response.modelo,
-            year: response.anio,
-            plate: response.placa || '',
-            mileage: response.kilometraje_actual,
-            fuelType: response.tipo_combustible || '',
-            color: response.color || '#3B82F6',
-            vinNumber: response.numero_vin || '',
-            purchaseDate: response.fecha_compra || '',
-            createdAt: response.fecha_creacion,
-            updatedAt: response.fecha_actualizacion,
-            isActive: response.activo,
-            lastMaintenance: response.ultimo_mantenimiento || '',
-            nextMaintenance: response.proximo_mantenimiento || ''
-        };
     },
 
     /**
      * Actualiza solo el kilometraje de un vehículo
      * @param id ID del vehículo
-     * @param mileage Nuevo kilometraje
+     * @param kilometraje Nuevo kilometraje
      */
-    updateMileage: async (id: number, mileage: number): Promise<Vehicle> => {
-        const response = await apiRequest<any>(
+    updateKilometraje: async (id: number, kilometraje: number): Promise<Vehicle> => {
+        return await apiRequest<Vehicle>(
             `/vehicles/${id}/kilometraje`,
             'PATCH',
-            { kilometraje: mileage }
+            { kilometraje }
         );
-
-        // Transformar la respuesta de la API a nuestro modelo de datos
-        return {
-            id: response.id_vehiculo,
-            userId: response.id_usuario,
-            brand: response.marca,
-            model: response.modelo,
-            year: response.anio,
-            plate: response.placa || '',
-            mileage: response.kilometraje_actual,
-            fuelType: response.tipo_combustible || '',
-            color: response.color || '#3B82F6',
-            vinNumber: response.numero_vin || '',
-            purchaseDate: response.fecha_compra || '',
-            createdAt: response.fecha_creacion,
-            updatedAt: response.fecha_actualizacion,
-            isActive: response.activo,
-            lastMaintenance: response.ultimo_mantenimiento || '',
-            nextMaintenance: response.proximo_mantenimiento || ''
-        };
     },
 
     /**
-     * Elimina (desactiva) un vehículo
+     * Elimina un vehículo
      * @param id ID del vehículo a eliminar
      */
-    deleteVehicle: async (id: number): Promise<boolean> => {
+    deleteVehicle: async (id: number): Promise<void> => {
         await apiRequest<void>(
             `/vehicles/${id}`,
             'DELETE'
         );
-
-        return true;
     },
 
     /**
      * Obtiene todas las marcas de vehículos disponibles
      */
-    getAllBrands: async (): Promise<{ id: number, name: string }[]> => {
-        const response = await apiRequest<any[]>('/vehicles/brands/all');
+    getAllBrands: async (): Promise<any[]> => {
+        return await apiRequest<any[]>('/vehicles/brands/all');
+    },
 
-        return response.map(brand => ({
-            id: brand.id_marca,
-            name: brand.nombre
-        }));
+    /**
+     * Obtiene una marca específica por su ID
+     * @param id ID de la marca
+     */
+    getBrandById: async (id: number): Promise<any> => {
+        return await apiRequest<any>(`/vehicles/brands/${id}`);
+    },
+
+    /**
+     * Crea una nueva marca
+     * @param nombre Nombre de la marca
+     */
+    createBrand: async (nombre: string): Promise<any> => {
+        return await apiRequest<any>(
+            '/vehicles/brands',
+            'POST',
+            { nombre }
+        );
     },
 
     /**
      * Obtiene todos los modelos asociados a una marca
      * @param brandId ID de la marca
      */
-    getModelsByBrand: async (brandId: number): Promise<{ id: number, name: string }[]> => {
-        const response = await apiRequest<any[]>(`/vehicles/brands/${brandId}/models`);
-
-        return response.map(model => ({
-            id: model.id_modelo,
-            name: model.nombre
-        }));
+    getModelsByBrand: async (brandId: number): Promise<any[]> => {
+        return await apiRequest<any[]>(`/vehicles/brands/${brandId}/models`);
     },
 
     /**
-     * Método auxiliar para obtener el ID de una marca por su nombre
-     * @param brandName Nombre de la marca
+     * Obtiene un modelo específico por su ID
+     * @param id ID del modelo
      */
-    getBrandIdByName: async (brandName: string): Promise<number> => {
-        const brands = await VehicleService.getAllBrands();
-        const brand = brands.find((b: { name: string; }) => b.name.toLowerCase() === brandName.toLowerCase());
-
-        if (brand) return brand.id;
-
-        // Si no existe, crear la marca
-        const response = await apiRequest<any>(
-            '/vehicles/brands',
-            'POST',
-            { nombre: brandName }
-        );
-
-        return response.id_marca;
+    getModelById: async (id: number): Promise<any> => {
+        return await apiRequest<any>(`/vehicles/models/${id}`);
     },
 
     /**
-     * Método auxiliar para obtener el ID de un modelo por su nombre y marca
-     * @param modelName Nombre del modelo
-     * @param brandId ID de la marca
+     * Crea un nuevo modelo
+     * @param createModelDto Datos del modelo a crear
      */
-    getModelIdByName: async (modelName: string, brandId: number): Promise<number> => {
-        const models = await VehicleService.getModelsByBrand(brandId);
-        const model = models.find((m: { name: string; }) => m.name.toLowerCase() === modelName.toLowerCase());
-
-        if (model) return model.id;
-
-        // Si no existe, crear el modelo
-        const response = await apiRequest<any>(
+    createModel: async (createModelDto: { id_marca: number, nombre: string }): Promise<any> => {
+        return await apiRequest<any>(
             '/vehicles/models',
             'POST',
-            {
-                id_marca: brandId,
-                nombre: modelName
-            }
+            createModelDto
         );
-
-        return response.id_modelo;
     }
 };
