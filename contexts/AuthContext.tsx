@@ -106,7 +106,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             if (response.user && response.token) {
                 setUser(response.user);
-                await setStorageItem(TOKEN_STORAGE_KEY, response.token);
                 await setStorageItem(USER_STORAGE_KEY, JSON.stringify(response.user));
                 router.replace('/(app)');
             } else {
@@ -126,7 +125,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         try {
             apiSetAuthToken(null);
             setUser(null);
-            await removeStorageItem(TOKEN_STORAGE_KEY);
             await removeStorageItem(USER_STORAGE_KEY);
             router.replace('/(auth)/login');
         } catch (error) {

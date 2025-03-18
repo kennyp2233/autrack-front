@@ -6,11 +6,12 @@ import { Feather } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/ThemeContext';
 import { VehicleFormData } from '@/types/Vehicle';
 import { VehicleService } from '@/api';
+import { useVehicles } from '@/contexts/VehiclesContext';
 
 export default function VehicleForm() {
     const router = useRouter();
     const { theme, isDark } = useTheme();
-
+    const { refreshData } = useVehicles();
     // Estados para listas de marcas y modelos
     const [brands, setBrands] = useState<Array<{ id_marca: number, nombre: string }>>([]);
     const [models, setModels] = useState<Array<{ id_modelo: number, nombre: string }>>([]);
@@ -145,10 +146,12 @@ export default function VehicleForm() {
                 placa: formData.placa || undefined
             });
 
+            await refreshData(); // Asegúrate de que esta función esté disponible desde el contexto
+
             Alert.alert(
                 'Éxito',
                 'Vehículo agregado correctamente',
-                [{ text: 'OK', onPress: () => router.back() }]
+                [{ text: 'OK', onPress: () => router.replace('/vehicles') }]
             );
         } catch (error) {
             console.error('Error al guardar vehículo:', error);

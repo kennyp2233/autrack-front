@@ -42,6 +42,11 @@ export default function VehicleDetailScreen() {
         );
     }
 
+    // Construir títulos a partir de marca y modelo
+    const brandName = vehicle.marca?.nombre || '';
+    const modelName = vehicle.modelo?.nombre || '';
+    const vehicleTitle = `${brandName} ${modelName}`;
+
     // Manejadores de acciones
     const handleEditVehicle = () => {
         router.push(`/vehicles/${vehicleId}/edit`);
@@ -61,10 +66,14 @@ export default function VehicleDetailScreen() {
         setShowDeleteConfirm(true);
     };
 
-    const confirmDelete = () => {
-        const success = deleteVehicle(vehicleId);
-        if (success) {
-            router.back();
+    const confirmDelete = async () => {
+        try {
+            const success = await deleteVehicle(vehicleId);
+            if (success) {
+                router.replace('/vehicles');
+            }
+        } catch (error) {
+            console.error('Error al eliminar vehículo:', error);
         }
     };
 
@@ -72,7 +81,7 @@ export default function VehicleDetailScreen() {
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Header con título y opciones */}
             <VehicleDetailHeader
-                title={`${vehicle.brand} ${vehicle.model}`}
+                title={vehicleTitle}
                 onBack={() => router.back()}
                 onOptionsPress={() => setShowOptionsMenu(true)}
                 theme={theme}

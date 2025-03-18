@@ -10,7 +10,7 @@ interface VehiclesContextType {
     maintenance: Maintenance[];
     isLoading: boolean;
     error: string | null;
-    refreshData: () => Promise<void>;
+    refreshData: () => Promise<boolean>;
     getVehicle: (id: number) => Vehicle | undefined;
     getVehicleMaintenance: (vehicleId: number) => Maintenance[];
     getMaintenance: (id: number) => Maintenance | undefined;
@@ -27,7 +27,7 @@ export const VehiclesContext = createContext<VehiclesContextType>({
     maintenance: [],
     isLoading: false,
     error: null,
-    refreshData: async () => { },
+    refreshData: async () => false,
     getVehicle: () => undefined,
     getVehicleMaintenance: () => [],
     getMaintenance: () => undefined,
@@ -57,22 +57,29 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
         try {
             // Cargar vehículos
             const vehiclesData = await VehicleService.getAllVehicles();
-            setVehicles(vehiclesData.filter(v => v.isActive));
+            // Filtrar solo vehículos activos
+            const activeVehicles = vehiclesData.filter(v => v.activo !== false);
+            setVehicles(activeVehicles);
 
-            // Cargar mantenimientos de todos los vehículos
+            // Cargar mantenimientos de todos los vehículos activos
             let allMaintenance: Maintenance[] = [];
 
-            for (const vehicle of vehiclesData) {
-                if (vehicle.isActive) {
-                    const vehicleMaintenance = await MaintenanceService.getMaintenanceByVehicle(vehicle.id);
+            for (const vehicle of activeVehicles) {
+                try {
+                    const vehicleMaintenance = await MaintenanceService.getMaintenanceByVehicle(vehicle.id_vehiculo);
                     allMaintenance = [...allMaintenance, ...vehicleMaintenance];
+                } catch (err) {
+                    console.error(`Error al cargar mantenimientos del vehículo ${vehicle.id_vehiculo}:`, err);
+                    // Continuar con el siguiente vehículo en lugar de fallar completamente
                 }
             }
 
             setMaintenance(allMaintenance);
+            return true;
         } catch (err) {
             console.error('Error al cargar datos:', err);
             setError('Error al cargar los datos. Inténtalo de nuevo.');
+            return false;
         } finally {
             setIsLoading(false);
         }
@@ -84,13 +91,13 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
     }, [loadData]);
 
     // Función para actualizar los datos
-    const refreshData = async () => {
-        await loadData();
+    const refreshData = async (): Promise<boolean> => {
+        return await loadData();
     };
 
     // Obtener un vehículo por ID
     const getVehicle = (id: number) => {
-        return vehicles.find(vehicle => vehicle.id === id);
+        return vehicles.find(vehicle => vehicle.id_vehiculo === id);
     };
 
     // Obtener los mantenimientos de un vehículo
@@ -108,8 +115,15 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
         setIsLoading(true);
         try {
             const newVehicle = await VehicleService.createVehicle(vehicleData);
-            setVehicles(prev => [...prev, newVehicle]);
-            return newVehicle;
+
+            // Asegurarse de que el nuevo vehículo tiene la propiedad activo
+            const vehicleWithActive = {
+                ...newVehicle,
+                activo: true
+            };
+
+            setVehicles(prev => [...prev, vehicleWithActive]);
+            return vehicleWithActive;
         } catch (err) {
             console.error('Error al añadir vehículo:', err);
             const errorMessage = err instanceof Error ? err.message : 'Error al añadir vehículo';
@@ -129,7 +143,12 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
         setIsLoading(true);
         try {
             const updatedVehicle = await VehicleService.updateVehicle(id, vehicleData);
-            setVehicles(vehicles.map(v => v.id === id ? updatedVehicle : v));
+
+            // Actualizar el vehículo en el estado local
+            setVehicles(prevVehicles =>
+                prevVehicles.map(v => v.id_vehiculo === id ? { ...v, ...updatedVehicle } : v)
+            );
+
             return updatedVehicle;
         } catch (err) {
             console.error('Error al actualizar vehículo:', err);
@@ -142,7 +161,7 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
         }
     };
 
-    // Eliminar un vehículo
+    // Eliminar un vehículo (marcar como inactivo)
     const deleteVehicle = async (id: number) => {
         const vehicle = getVehicle(id);
         if (!vehicle) return false;
@@ -152,9 +171,15 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
             await VehicleService.deleteVehicle(id);
 
             // Eliminar de la lista local (o marcar como inactivo)
-            setVehicles(vehicles.map(v =>
-                v.id === id ? { ...v, isActive: false } : v
-            ));
+            setVehicles(prevVehicles =>
+                prevVehicles.filter(v => v.id_vehiculo !== id)
+            );
+
+            // También eliminar los mantenimientos asociados del estado local
+            setMaintenance(prevMaintenance =>
+                prevMaintenance.filter(m => m.vehicleId !== id)
+            );
+
             return true;
         } catch (err) {
             console.error('Error al eliminar vehículo:', err);
@@ -182,11 +207,18 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
                 nextDate.setMonth(nextDate.getMonth() + 3);
                 const nextDateStr = nextDate.toISOString().split('T')[0];
 
-                await updateVehicle(vehicle.id, {
-                    lastMaintenance: newMaintenance.date,
-                    nextMaintenance: nextDateStr,
-                    mileage: newMaintenance.mileage
+                // Actualizar el kilometraje y fechas de mantenimiento
+                const updatedVehicle = await updateVehicle(vehicle.id_vehiculo, {
+                    kilometraje_actual: newMaintenance.mileage
                 });
+
+                // Si no pudimos actualizar el vehículo, al menos actualizar el estado local
+                if (!updatedVehicle) {
+                    setVehicles(prevVehicles =>
+                        prevVehicles.map(v => v.id_vehiculo === vehicle.id_vehiculo ?
+                            { ...v, kilometraje_actual: newMaintenance.mileage } : v)
+                    );
+                }
             }
 
             return newMaintenance;
@@ -209,7 +241,23 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
         setIsLoading(true);
         try {
             const updatedMaintenance = await MaintenanceService.updateMaintenance(id, maintenanceData);
-            setMaintenance(maintenance.map(m => m.id === id ? updatedMaintenance : m));
+
+            // Actualizar el mantenimiento en el estado local
+            setMaintenance(prevMaintenance =>
+                prevMaintenance.map(m => m.id === id ? updatedMaintenance : m)
+            );
+
+            // Si se actualizó el kilometraje, actualizar también el vehículo
+            if (maintenanceData.mileage && Number(maintenanceData.mileage) > 0) {
+                const vehicle = getVehicle(existingMaintenance.vehicleId);
+                if (vehicle && Number(maintenanceData.mileage) > vehicle.kilometraje_actual) {
+                    // Actualizar el kilometraje del vehículo si el nuevo es mayor
+                    await updateVehicle(vehicle.id_vehiculo, {
+                        kilometraje_actual: Number(maintenanceData.mileage)
+                    });
+                }
+            }
+
             return updatedMaintenance;
         } catch (err) {
             console.error('Error al actualizar mantenimiento:', err);
@@ -230,7 +278,12 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
         setIsLoading(true);
         try {
             await MaintenanceService.deleteMaintenance(id);
-            setMaintenance(maintenance.filter(m => m.id !== id));
+
+            // Eliminar del estado local
+            setMaintenance(prevMaintenance =>
+                prevMaintenance.filter(m => m.id !== id)
+            );
+
             return true;
         } catch (err) {
             console.error('Error al eliminar mantenimiento:', err);

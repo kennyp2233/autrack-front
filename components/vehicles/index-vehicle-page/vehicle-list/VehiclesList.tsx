@@ -19,12 +19,12 @@ const VehiclesList: React.FC<VehiclesListProps> = ({
     // Renderizar cada elemento de vehículo
     const renderVehicleItem = ({ item }: { item: Vehicle }) => {
         // Si el vehículo no está activo, no lo mostramos
-        if (!item.isActive) return null;
+        if (!item.activo) return null;
 
         return (
             <VehicleItem
                 vehicle={item}
-                onPress={() => onVehiclePress(item.id)}
+                onPress={() => onVehiclePress(item.id_vehiculo)}
                 theme={theme}
             />
         );
@@ -33,7 +33,7 @@ const VehiclesList: React.FC<VehiclesListProps> = ({
     return (
         <FlatList
             data={vehicles}
-            keyExtractor={(item) => item.id.toString()}
+            keyExtractor={(item) => item.id_vehiculo.toString()}
             renderItem={renderVehicleItem}
             contentContainerStyle={[
                 styles.listContent,

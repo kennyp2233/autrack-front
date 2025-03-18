@@ -1,6 +1,6 @@
 // types/Vehicle.ts
 export interface Vehicle {
-  id: number;
+  id_vehiculo: number;
   id_usuario: number;
   id_marca: number;
   id_modelo: number;

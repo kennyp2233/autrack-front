@@ -17,6 +17,10 @@ const VehicleItem: React.FC<VehicleItemProps> = ({ vehicle, onPress, theme }) =>
     const primaryColor = theme.primary;
     const borderColor = theme.border;
 
+    // Extraer nombre de marca y modelo
+    const brandName = vehicle.marca?.nombre || '';
+    const modelName = vehicle.modelo?.nombre || '';
+
     return (
         <TouchableOpacity
             style={[styles.vehicleItem, { backgroundColor: cardColor, borderColor }]}
@@ -29,19 +33,19 @@ const VehicleItem: React.FC<VehicleItemProps> = ({ vehicle, onPress, theme }) =>
 
             <View style={styles.vehicleInfo}>
                 <Text style={[styles.vehicleName, { color: textColor }]}>
-                    {vehicle.brand} {vehicle.model}
+                    {brandName} {modelName}
                 </Text>
                 <Text style={[styles.vehicleDetails, { color: secondaryTextColor }]}>
-                    {vehicle.year} • {vehicle.plate || 'Sin placa'}
+                    {vehicle.anio} • {vehicle.placa || 'Sin placa'}
                 </Text>
             </View>
 
             <View style={styles.vehicleStats}>
                 <Text style={[styles.vehicleMileage, { color: primaryColor }]}>
-                    {vehicle.mileage} km
+                    {vehicle.kilometraje_actual?.toLocaleString() || 0} km
                 </Text>
                 <Text style={[styles.vehicleLastMaintenance, { color: secondaryTextColor }]}>
-                    Últ: {vehicle.lastMaintenance || 'N/A'}
+                    Últ: N/A
                 </Text>
             </View>
         </TouchableOpacity>

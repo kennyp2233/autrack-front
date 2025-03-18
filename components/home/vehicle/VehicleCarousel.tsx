@@ -174,7 +174,7 @@ const VehicleCarousel: React.FC<VehicleCarouselProps> = ({
                     scrollEventThrottle={16}
                 >
                     {vehicles.map((vehicle, index) => (
-                        <View key={vehicle.id} style={styles.cardContainer}>
+                        <View key={vehicle.id_vehiculo} style={styles.cardContainer}>
                             <VehicleCard
                                 vehicle={vehicle}
                                 onPress={handleVehiclePress}

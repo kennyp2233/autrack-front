@@ -19,32 +19,37 @@ const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onPress, theme }) =>
     const cardBgColor = theme?.card || '#FFFFFF';
     const borderColor = theme?.border || '#DDDDDD';
 
-    // Calcular color del vehículo
-    const vehicleColor = vehicle.color || '#3B82F6';
+    // Calcular color del vehículo (usando un valor predeterminado)
+    const vehicleColor = '#3B82F6'; // Color predeterminado azul
 
     // Calcular porcentaje de estado (simulado)
     const statusPercent = 85; // En una implementación real, calcularía basado en mantenimientos
 
     // Determinar texto de último mantenimiento
-    const lastMaintenanceText = vehicle.lastMaintenance || 'No registrado';
+    // Usamos un valor predeterminado ya que este campo puede no existir en el modelo actual
+    const lastMaintenanceText = 'No registrado';
 
     // Formatear kilometraje
-    const formattedMileage = vehicle.mileage.toLocaleString();
+    const formattedMileage = vehicle.kilometraje_actual ? vehicle.kilometraje_actual.toLocaleString() : '0';
+
+    // Extraer nombre de marca y modelo
+    const brandName = vehicle.marca?.nombre || 'Marca';
+    const modelName = vehicle.modelo?.nombre || 'Modelo';
 
     return (
         <TouchableOpacity
             style={[styles.container, { backgroundColor: cardBgColor, borderColor }]}
-            onPress={() => onPress(vehicle.id)}
+            onPress={() => onPress(vehicle.id_vehiculo)}
             activeOpacity={0.9}
         >
             {/* Header with vehicle info */}
             <View style={styles.header}>
                 <View>
                     <Text style={[styles.name, { color: textColor }]}>
-                        {vehicle.brand} {vehicle.model}
+                        {brandName} {modelName}
                     </Text>
                     <Text style={[styles.year, { color: secondaryTextColor }]}>
-                        {vehicle.year} • {vehicle.plate || 'Sin placa'}
+                        {vehicle.anio} • {vehicle.placa || 'Sin placa'}
                     </Text>
                 </View>
 
@@ -55,13 +60,8 @@ const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onPress, theme }) =>
             {/* Image container with gradient overlay */}
             <View style={styles.imageContainer}>
                 {/* Placeholder for actual vehicle image */}
-                {/* En una implementación real, usaría Image en lugar del icono */}
                 <View style={[styles.imagePlaceholder, { backgroundColor: `${vehicleColor}20` }]}>
-                    <Image
-                        source={require('@/assets/image.png')}
-                        resizeMode="center"
-                    />
-
+                    <Feather name="truck" size={48} color={vehicleColor} />
                 </View>
 
                 {/* Gradient overlay at bottom of image for better text contrast */}
@@ -123,15 +123,13 @@ const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onPress, theme }) =>
                     ]} />
                 </View>
 
-                {/* Next service */}
-                {vehicle.nextMaintenance && (
-                    <View style={styles.nextService}>
-                        <Feather name="alert-circle" size={12} color={theme?.warning || '#E6A700'} />
-                        <Text style={[styles.nextServiceText, { color: secondaryTextColor }]}>
-                            Próximo servicio: {vehicle.nextMaintenance}
-                        </Text>
-                    </View>
-                )}
+                {/* Next service - Omitimos esto si no hay próximo mantenimiento */}
+                <View style={styles.nextService}>
+                    <Feather name="alert-circle" size={12} color={theme?.warning || '#E6A700'} />
+                    <Text style={[styles.nextServiceText, { color: secondaryTextColor }]}>
+                        Próximo servicio: No programado
+                    </Text>
+                </View>
             </View>
         </TouchableOpacity>
     );
