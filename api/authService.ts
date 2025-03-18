@@ -15,19 +15,19 @@ export const AuthService = {
             '/auth/login',
             'POST',
             {
-                email: credentials.email,
-                password: credentials.password
+                correo: credentials.email,
+                contrasena: credentials.password
             },
             false // No requiere autenticación previa
         );
-
+        console.log(response);
         // Guardar el token recibido
-        if (response.access_token) {
-            await setAuthToken(response.access_token);
+        if (response.token) {
+            await setAuthToken(response.token);
 
             // Transformar la respuesta a nuestro formato esperado
             return {
-                token: response.access_token,
+                token: response.token,
                 user: {
                     id: response.user.id,
                     email: response.user.email,

@@ -41,9 +41,10 @@ export default function LoginScreen() {
 
     // Manejar inicio de sesión
     const handleLogin = async () => {
+        /*
         router.replace('/(app)');
         return true;
-
+*/
         if (!validateForm()) return;
         try {
             await login({ email, password, rememberMe });

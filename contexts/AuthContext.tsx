@@ -1,10 +1,11 @@
 // contexts/AuthContext.tsx
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter, useSegments } from 'expo-router';
-import { Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert, Platform } from 'react-native';
+// Importamos nuestras funciones de almacenamiento
+import { getStorageItem, setStorageItem, removeStorageItem } from '@/api/storage';
 import { User, AuthCredentials, RegisterData } from '../types/Users';
-import { AuthService, setAuthToken, getAuthToken } from '@/api';
+import { AuthService, setAuthToken as apiSetAuthToken } from '@/api';
 
 // Claves para almacenamiento local
 const TOKEN_STORAGE_KEY = 'autrack_auth_token';
@@ -44,30 +45,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
             const inAuthGroup = segments[0] === '(auth)';
 
             if (!user && !inAuthGroup) {
-                // Redirigir a la pantalla de login si no hay usuario autenticado
                 router.replace('/(auth)/login');
             } else if (user && inAuthGroup) {
-                // Redirigir al dashboard si el usuario está autenticado
                 router.replace('/(app)');
             }
         }
     }, [user, segments, isLoading]);
 
-    // Verificar si hay un usuario almacenado al iniciar la aplicación
+    // Cargar el usuario almacenado al iniciar la aplicación
     useEffect(() => {
         const loadUserFromStorage = async () => {
             try {
-                // Cargar token y datos de usuario desde AsyncStorage
-                const storedToken = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
-                const storedUserJson = await AsyncStorage.getItem(USER_STORAGE_KEY);
+                const storedToken = await getStorageItem(TOKEN_STORAGE_KEY);
+                const storedUserJson = await getStorageItem(USER_STORAGE_KEY);
 
                 if (storedToken && storedUserJson) {
                     const storedUser = JSON.parse(storedUserJson) as User;
-
                     // Establecer el token en el servicio API
-                    setAuthToken(storedToken);
-
-                    // Establecer el usuario en el estado
+                    apiSetAuthToken(storedToken);
                     setUser(storedUser);
                 }
             } catch (error) {
@@ -84,17 +79,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const login = async (credentials: AuthCredentials) => {
         setIsLoading(true);
         try {
-            // Llamar al servicio de autenticación
             const response = await AuthService.login(credentials);
 
             if (response.user && response.token) {
-                // Guardar en el estado
                 setUser(response.user);
-
-                // Guardar en AsyncStorage para persistencia
-                await AsyncStorage.setItem(TOKEN_STORAGE_KEY, response.token);
-                await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(response.user));
-
+                await setStorageItem(TOKEN_STORAGE_KEY, response.token);
+                await setStorageItem(USER_STORAGE_KEY, JSON.stringify(response.user));
                 router.replace('/(app)');
             } else {
                 throw new Error('Datos de usuario incompletos');
@@ -112,17 +102,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const register = async (data: RegisterData) => {
         setIsLoading(true);
         try {
-            // Llamar al servicio de registro
             const response = await AuthService.register(data);
 
             if (response.user && response.token) {
-                // Guardar en el estado
                 setUser(response.user);
-
-                // Guardar en AsyncStorage para persistencia
-                await AsyncStorage.setItem(TOKEN_STORAGE_KEY, response.token);
-                await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(response.user));
-
+                await setStorageItem(TOKEN_STORAGE_KEY, response.token);
+                await setStorageItem(USER_STORAGE_KEY, JSON.stringify(response.user));
                 router.replace('/(app)');
             } else {
                 throw new Error('Datos de usuario incompletos');
@@ -139,14 +124,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Función para cerrar sesión
     const logout = async () => {
         try {
-            // Limpiar token y estado
-            setAuthToken(null);
+            apiSetAuthToken(null);
             setUser(null);
-
-            // Limpiar almacenamiento local
-            await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
-            await AsyncStorage.removeItem(USER_STORAGE_KEY);
-
+            await removeStorageItem(TOKEN_STORAGE_KEY);
+            await removeStorageItem(USER_STORAGE_KEY);
             router.replace('/(auth)/login');
         } catch (error) {
             console.error('Error al cerrar sesión:', error);
