@@ -8,11 +8,13 @@ const baseColors = {
     success: '#4CAF50',
     warning: '#E6A700',  // Más oscuro que el original para mejor contraste
     danger: '#F24E1E',
+    info: '#2196F3',
     background: '#F5F5F5',
     cardBackground: '#FFFFFF',
     textPrimary: '#333333',
     textSecondary: '#555555', // Más oscuro que el original para mejor contraste
     border: '#D1D5DB',        // Más oscuro que el original
+
 }
 
 // Light theme
@@ -23,6 +25,7 @@ export const lightTheme = {
     success: baseColors.success,
     warning: baseColors.warning,
     danger: baseColors.danger,
+    info: baseColors.info,
 
     // Backgrounds
     background: baseColors.background,
@@ -57,6 +60,7 @@ export const darkTheme = {
     success: '#4ECB71',
     warning: '#FFC857',
     danger: '#FF6B6B',
+    info: '#2196F3',
 
     // Backgrounds
     background: '#121218',
