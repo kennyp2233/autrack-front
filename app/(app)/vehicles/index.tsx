@@ -1,40 +1,40 @@
 // app/(app)/vehicles/index.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Animated, StyleSheet, StatusBar } from 'react-native';
+import { FlatList, View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useVehicles } from '@/contexts/VehiclesContext';
-import { useTheme } from '@/contexts/ThemeContext';
+
+// Componentes base
+import PageContainer from '@/components/ui/PageContainer';
+import PageHeaderWithSearch from '@/components/ui/PageHeaderWithSearch';
+import EmptyStateView from '@/components/ui/EmptyStateView';
+import FloatingActionButton from '@/components/ui/FloatingActionButton';
 import LoadingErrorIndicator from '@/components/common/LoadingErrorIndicator';
-import SearchBar from '@/components/vehicles/index-vehicle-page/search-bar/SearchBar';
-import VehiclesList from '@/components/vehicles/index-vehicle-page/vehicle-list/VehiclesList';
-import EmptyVehicleState from '@/components/vehicles/index-vehicle-page/empty-vehicle-state/EmptyVehicleState';
-import AddVehicleButton from '@/components/vehicles/index-vehicle-page/add-vehicle-button/AddVehicleButton';
-import StaticHeader from '@/components/common/StaticHeader';
+
+// Componentes específicos
+import VehicleItem from '@/components/vehicles/index-vehicle-page/vehicle-list/VehicleItem';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function VehiclesIndexScreen() {
+    const { theme } = useTheme();
     const router = useRouter();
     const { vehicles, isLoading, error, refreshData } = useVehicles();
-    const { theme, isDark } = useTheme();
 
-    // Estado para búsqueda de vehículos
+    // Estado para búsqueda
     const [searchQuery, setSearchQuery] = useState('');
-    const [searchActive, setSearchActive] = useState(false);
     const [filteredVehicles, setFilteredVehicles] = useState(vehicles);
 
-    // Animación para la barra de búsqueda
-    const searchBarWidth = useState(new Animated.Value(60))[0];
-
-    // Aplicar filtros cuando cambie la búsqueda o la lista de vehículos
+    // Filtrar vehículos cuando cambia la búsqueda o los datos
     useEffect(() => {
         if (searchQuery.trim() === '') {
             setFilteredVehicles(vehicles);
         } else {
             const query = searchQuery.toLowerCase();
             const filtered = vehicles.filter(vehicle => {
-                const brand = vehicle.marca ? vehicle.marca.nombre.toLowerCase() : '';
-                const model = vehicle.modelo ? vehicle.modelo.nombre.toLowerCase() : '';
-                const plate = vehicle.placa ? vehicle.placa.toLowerCase() : '';
-                const year = vehicle.anio ? vehicle.anio.toString() : '';
+                const brand = vehicle.marca?.nombre.toLowerCase() || '';
+                const model = vehicle.modelo?.nombre.toLowerCase() || '';
+                const plate = vehicle.placa?.toLowerCase() || '';
+                const year = vehicle.anio?.toString() || '';
 
                 return (
                     brand.includes(query) ||
@@ -47,102 +47,113 @@ export default function VehiclesIndexScreen() {
         }
     }, [searchQuery, vehicles]);
 
-    // Activar/desactivar búsqueda
-    const toggleSearch = () => {
-        if (searchActive) {
-            // Cerrar búsqueda
-            setSearchQuery('');
-            Animated.timing(searchBarWidth, {
-                toValue: 60,
-                duration: 300,
-                useNativeDriver: false
-            }).start(() => {
-                setSearchActive(false);
-            });
-        } else {
-            // Abrir búsqueda
-            setSearchActive(true);
-            Animated.timing(searchBarWidth, {
-                toValue: 92, // Ancho casi completo
-                duration: 300,
-                useNativeDriver: false
-            }).start();
-        }
-    };
-
-    // Ir a la pantalla de detalle del vehículo
+    // Manejar clic en un vehículo
     const handleVehiclePress = (id: number) => {
         router.push(`/vehicles/${id}`);
     };
 
-    // Ir a la pantalla de agregar vehículo
+    // Manejar agregar nuevo vehículo
     const handleAddVehicle = () => {
         router.push('/vehicles/add');
     };
 
-    return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+    // Renderizado de cada vehículo
+    const renderVehicleItem = ({ item }: any) => (
+        <VehicleItem
+            vehicle={item}
+            onPress={() => handleVehiclePress(item.id_vehiculo)}
+        />
+    );
 
-            {/* Header estático */}
-            <StaticHeader
-                title={searchActive ? '' : 'Mis Vehículos'}
-                showBackButton={false}
-                rightIcon={searchActive ? '' : 'search'}
-                onRightIconPress={toggleSearch}
-                theme={theme}
+    // Determinar el contenido principal
+    const renderContent = () => {
+        if (isLoading) {
+            return (
+                <LoadingErrorIndicator
+                    isLoading={true}
+                    error={null}
+                    loadingMessage="Cargando vehículos..."
+                    theme={theme}
+                />
+            );
+        }
+
+        if (error) {
+            return (
+                <LoadingErrorIndicator
+                    isLoading={false}
+                    error={error}
+                    onRetry={refreshData}
+                    theme={theme}
+                />
+            );
+        }
+
+        if (vehicles.length === 0) {
+            return (
+                <EmptyStateView
+                    icon="truck"
+                    title="No tienes vehículos registrados"
+                    message="Agrega tu primer vehículo para comenzar a gestionar su mantenimiento."
+                    actionLabel="Agregar vehículo"
+                    onAction={handleAddVehicle}
+                />
+            );
+        }
+
+        if (filteredVehicles.length === 0 && searchQuery !== '') {
+            return (
+                <EmptyStateView
+                    icon="search"
+                    title="No se encontraron resultados"
+                    message={`No hay vehículos que coincidan con "${searchQuery}"`}
+                    actionLabel="Limpiar búsqueda"
+                    onAction={() => setSearchQuery('')}
+                />
+            );
+        }
+
+        return (
+            <FlatList
+                data={filteredVehicles}
+                renderItem={renderVehicleItem}
+                keyExtractor={(item) => item.id_vehiculo.toString()}
+                contentContainerStyle={styles.listContent}
+                showsVerticalScrollIndicator={false}
+            />
+        );
+    };
+
+    return (
+        <PageContainer>
+            <PageHeaderWithSearch
+                title="Mis Vehículos"
+                searchValue={searchQuery}
+                onSearchChange={setSearchQuery}
+                onSearchClear={() => setSearchQuery('')}
+                placeholder="Buscar marca, modelo, placa..."
             />
 
-            {/* Barra de búsqueda animada */}
-            {searchActive && (
-                <SearchBar
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    onClear={() => setSearchQuery('')}
-                    width={searchBarWidth}
-                    theme={theme}
-                    topPosition={StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 50}
+            <View style={styles.content}>
+                {renderContent()}
+            </View>
+
+            {vehicles.length > 0 && (
+                <FloatingActionButton
+                    icon="plus"
+                    onPress={handleAddVehicle}
                 />
             )}
-
-            {/* Indicador de carga o error */}
-            <LoadingErrorIndicator
-                isLoading={isLoading}
-                error={error}
-                onRetry={refreshData}
-                loadingMessage="Cargando vehículos..."
-                theme={theme}
-            />
-
-            {/* Contenido principal */}
-            {!isLoading && !error && (
-                vehicles.length === 0 ? (
-                    <EmptyVehicleState
-                        searchQuery={searchQuery}
-                        onAddVehicle={handleAddVehicle}
-                        theme={theme}
-                    />
-                ) : (
-                    <>
-                        <VehiclesList
-                            vehicles={filteredVehicles}
-                            onVehiclePress={handleVehiclePress}
-                            searchActive={searchActive}
-                            theme={theme}
-                        />
-                        <AddVehicleButton
-                            onPress={handleAddVehicle}
-                            theme={theme}
-                        />
-                    </>
-                )
-            )}
-        </View>
+        </PageContainer>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    content: {
         flex: 1,
+    },
+    listContent: {
+        padding: 16,
+        paddingBottom: 80, // Espacio para el FAB
     }
 });

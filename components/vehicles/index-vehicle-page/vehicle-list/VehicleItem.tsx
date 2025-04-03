@@ -1,102 +1,97 @@
+// components/vehicles/index-vehicle-page/vehicle-list/VehicleItem.tsx
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Vehicle } from '@/types/Vehicle';
+import { useTheme } from '@/contexts/ThemeContext';
+import Card from '@/components/ui/Card';
 
 interface VehicleItemProps {
     vehicle: Vehicle;
     onPress: () => void;
-    theme: any;
 }
 
-const VehicleItem: React.FC<VehicleItemProps> = ({ vehicle, onPress, theme }) => {
-    // Colores basados en el tema
-    const cardColor = theme.card;
-    const textColor = theme.text;
-    const secondaryTextColor = theme.secondaryText;
-    const primaryColor = theme.primary;
-    const borderColor = theme.border;
+const VehicleItem: React.FC<VehicleItemProps> = ({ vehicle, onPress }) => {
+    const { theme } = useTheme();
 
-    // Extraer nombre de marca y modelo
-    const brandName = vehicle.marca?.nombre || '';
-    const modelName = vehicle.modelo?.nombre || '';
+    // Obtener datos del vehículo
+    const brandName = vehicle.marca?.nombre || 'Sin marca';
+    const modelName = vehicle.modelo?.nombre || 'Sin modelo';
+    const year = vehicle.anio || '';
+    const plate = vehicle.placa || 'Sin placa';
+    const mileage = vehicle.kilometraje_actual?.toLocaleString() || '0';
 
     return (
-        <TouchableOpacity
-            style={[styles.vehicleItem, { backgroundColor: cardColor, borderColor }]}
-            onPress={onPress}
-            activeOpacity={0.7}
-        >
-            <View style={[styles.vehicleIconContainer, { backgroundColor: `${primaryColor}15` }]}>
-                <Feather name="truck" size={24} color={primaryColor} />
-            </View>
+        <Card style={styles.card}>
+            <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
+                {/* Icono */}
+                <View style={[styles.iconContainer, { backgroundColor: `${theme.primary}15` }]}>
+                    <Feather name="truck" size={24} color={theme.primary} />
+                </View>
 
-            <View style={styles.vehicleInfo}>
-                <Text style={[styles.vehicleName, { color: textColor }]}>
-                    {brandName} {modelName}
-                </Text>
-                <Text style={[styles.vehicleDetails, { color: secondaryTextColor }]}>
-                    {vehicle.anio} • {vehicle.placa || 'Sin placa'}
-                </Text>
-            </View>
+                {/* Información */}
+                <View style={styles.infoContainer}>
+                    <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>
+                        {brandName} {modelName}
+                    </Text>
 
-            <View style={styles.vehicleStats}>
-                <Text style={[styles.vehicleMileage, { color: primaryColor }]}>
-                    {vehicle.kilometraje_actual?.toLocaleString() || 0} km
-                </Text>
-                <Text style={[styles.vehicleLastMaintenance, { color: secondaryTextColor }]}>
-                    Últ: N/A
-                </Text>
-            </View>
-        </TouchableOpacity>
+                    <View style={styles.detailsRow}>
+                        <Text style={[styles.details, { color: theme.secondaryText }]}>
+                            {year} • {plate}
+                        </Text>
+
+                        <Text style={[styles.mileage, { color: theme.primary }]}>
+                            {mileage} km
+                        </Text>
+                    </View>
+                </View>
+
+                {/* Flecha */}
+                <Feather name="chevron-right" size={20} color={theme.secondaryText} />
+            </TouchableOpacity>
+        </Card>
     );
 };
 
 const styles = StyleSheet.create({
-    vehicleItem: {
-        flexDirection: 'row',
-        borderRadius: 12,
-        padding: 16,
+    card: {
         marginBottom: 12,
-        alignItems: 'center',
-        borderWidth: 0.5,
-        // Añadir sombra sutil
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
+        padding: 0,
     },
-    vehicleIconContainer: {
+    container: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+    },
+    iconContainer: {
         width: 48,
         height: 48,
         borderRadius: 24,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 12,
+        marginRight: 16,
     },
-    vehicleInfo: {
+    infoContainer: {
         flex: 1,
+        marginRight: 8,
     },
-    vehicleName: {
-        fontWeight: 'bold',
+    title: {
         fontSize: 16,
+        fontWeight: 'bold',
         marginBottom: 4,
     },
-    vehicleDetails: {
+    detailsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    details: {
         fontSize: 14,
     },
-    vehicleStats: {
-        alignItems: 'flex-end',
-    },
-    vehicleMileage: {
-        fontWeight: '600',
-        fontSize: 15,
-        marginBottom: 4,
-    },
-    vehicleLastMaintenance: {
-        fontSize: 12,
-    },
+    mileage: {
+        fontWeight: '500',
+        fontSize: 14,
+    }
 });
 
 export default VehicleItem;
