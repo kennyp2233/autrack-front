@@ -1,55 +1,70 @@
 // app/(app)/vehicles/[id]/maintenance/add.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, StyleSheet, Alert, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Formik } from 'formik';
 import * as Yup from 'yup';
-import { MaintenanceService } from '@/api';
 import { useVehicles } from '@/contexts/VehiclesContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useMaintenance } from '@/contexts/MaintenanceContext';
+import { CreateMaintenanceRecordDto } from '@/types/Maintenance';
 
 // Componentes reutilizados
 import StaticHeader from '@/components/common/StaticHeader';
 import { FormikContainer, FormikField, FormikDropdown, FormikButtonGroup } from '@/components/ui/formik';
 import SectionHeader from '@/components/ui/SectionHeader';
 import Card from '@/components/ui/Card';
+import LoadingErrorIndicator from '@/components/common/LoadingErrorIndicator';
 
 // Definir esquema de validación usando Yup
 const MaintenanceSchema = Yup.object().shape({
     id_tipo: Yup.number().required('El tipo de mantenimiento es requerido'),
     fecha: Yup.string().required('La fecha es requerida'),
     kilometraje: Yup.number()
+        .typeError('El kilometraje debe ser un número')
         .required('El kilometraje es requerido')
         .min(1, 'El kilometraje debe ser mayor a 0'),
     costo: Yup.number()
+        .typeError('El costo debe ser un número')
         .nullable()
         .min(0, 'El costo no puede ser negativo'),
     notas: Yup.string().nullable(),
 });
-
-// Tipos de mantenimiento predefinidos para demostración
-// Esto debería venir de tu API en producción
-const maintenanceTypes = [
-    { id: 1, label: 'Cambio de Aceite', value: 1 },
-    { id: 2, label: 'Revisión de Frenos', value: 2 },
-    { id: 3, label: 'Neumáticos', value: 3 },
-    { id: 4, label: 'Alineación y Balanceo', value: 4 },
-    { id: 5, label: 'Filtro de Aire', value: 5 },
-    { id: 6, label: 'Revisión General', value: 6 },
-    { id: 7, label: 'Personalizado', value: 7 }
-];
 
 export default function AddMaintenanceScreen() {
     const params = useLocalSearchParams();
     const router = useRouter();
     const { theme } = useTheme();
     const { getVehicle, addMaintenance } = useVehicles();
+    const { types, loadTypes, isLoading: isMaintenanceLoading, error: maintenanceError } = useMaintenance();
 
     const vehicleId = Number(params.id as string);
     const vehicle = getVehicle(vehicleId);
 
     const [isLoading, setIsLoading] = useState(false);
-    const [maintenanceCategories, setMaintenanceCategories] = useState([]);
+    const [maintenanceTypes, setMaintenanceTypes] = useState<{ id: string, label: string, value: number }[]>([]);
+
+    // Cargar tipos de mantenimiento
+    useEffect(() => {
+        const loadData = async () => {
+            if (types.length === 0) {
+                await loadTypes();
+            }
+        };
+
+        loadData();
+    }, []);
+
+    // Formatear tipos para el dropdown
+    useEffect(() => {
+        if (types.length > 0) {
+            const formattedTypes = types.map(type => ({
+                id: type.id_tipo.toString(),
+                label: type.nombre,
+                value: type.id_tipo
+            }));
+            setMaintenanceTypes(formattedTypes);
+        }
+    }, [types]);
 
     // Valores iniciales para el formulario
     const initialValues = {
@@ -61,27 +76,12 @@ export default function AddMaintenanceScreen() {
         notas: ''
     };
 
-    // Cargar categorías y tipos de mantenimiento
-    useEffect(() => {
-        const loadCategories = async () => {
-            try {
-                // En producción, esto debería obtener datos de la API
-                // const response = await MaintenanceService.getMaintenanceCategories();
-                // setMaintenanceCategories(response);
-            } catch (error) {
-                console.error('Error al cargar categorías:', error);
-            }
-        };
-
-        loadCategories();
-    }, []);
-
     // Manejar el envío del formulario
-    const handleSubmit = async (values: { id_tipo: any; fecha: any; kilometraje: any; costo: any; notas: any; }) => {
+    const handleSubmit = async (values: any) => {
         setIsLoading(true);
         try {
             // Preparar el objeto para enviar al backend
-            const maintenanceData = {
+            const maintenanceData: CreateMaintenanceRecordDto = {
                 id_vehiculo: vehicleId,
                 id_tipo: Number(values.id_tipo),
                 fecha: values.fecha,
@@ -91,14 +91,7 @@ export default function AddMaintenanceScreen() {
             };
 
             // Guardar el registro de mantenimiento
-            await addMaintenance({
-                vehicleId: vehicleId,
-                type: maintenanceTypes.find(t => t.value === Number(values.id_tipo))?.label || 'Mantenimiento',
-                date: values.fecha,
-                mileage: Number(values.kilometraje),
-                cost: values.costo ? Number(values.costo) : undefined,
-                notes: values.notas
-            });
+            await addMaintenance(maintenanceData);
 
             Alert.alert(
                 'Mantenimiento registrado',
@@ -118,7 +111,11 @@ export default function AddMaintenanceScreen() {
             <View style={[styles.container, { backgroundColor: theme.background }]}>
                 <StaticHeader title="Agregar Mantenimiento" theme={theme} />
                 <View style={styles.centerContent}>
-                    <Text style={{ color: theme.text }}>Vehículo no encontrado</Text>
+                    <LoadingErrorIndicator
+                        isLoading={false}
+                        error="No se pudo encontrar el vehículo especificado"
+                        theme={theme}
+                    />
                 </View>
             </View>
         );
@@ -128,13 +125,21 @@ export default function AddMaintenanceScreen() {
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <StaticHeader title="Agregar Mantenimiento" theme={theme} />
 
+            {/* Indicador de carga o error */}
+            <LoadingErrorIndicator
+                isLoading={isMaintenanceLoading && !maintenanceTypes.length}
+                error={maintenanceError}
+                onRetry={loadTypes}
+                theme={theme}
+            />
+
             <FormikContainer
                 initialValues={initialValues}
                 validationSchema={MaintenanceSchema}
                 onSubmit={handleSubmit}
                 scrollEnabled={true}
             >
-                {({ values, errors, touched, handleChange, handleBlur, handleSubmit, setFieldValue }) => (
+                {() => (
                     <>
                         {/* Sección: Tipo de Mantenimiento */}
                         <Card>
@@ -146,9 +151,11 @@ export default function AddMaintenanceScreen() {
                             <FormikDropdown
                                 name="id_tipo"
                                 label="Selecciona el tipo de mantenimiento"
-                                items={maintenanceTypes}
+                                items={maintenanceTypes.length > 0 ? maintenanceTypes : []}
                                 placeholder="Seleccionar tipo de mantenimiento"
                                 required={true}
+                                loading={isMaintenanceLoading && !maintenanceTypes.length}
+                                emptyListMessage="No hay tipos de mantenimiento disponibles"
                             />
                         </Card>
 

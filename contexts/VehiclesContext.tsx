@@ -2,23 +2,23 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { Vehicle, VehicleFormData } from '../types/Vehicle';
-import { Maintenance, MaintenanceFormData } from '../types/Maintenance';
+import { MaintenanceRecord, CreateMaintenanceRecordDto, UpdateMaintenanceRecordDto } from '../types/Maintenance';
 import { VehicleService, MaintenanceService } from '@/api';
 
 interface VehiclesContextType {
     vehicles: Vehicle[];
-    maintenance: Maintenance[];
+    maintenance: MaintenanceRecord[];
     isLoading: boolean;
     error: string | null;
     refreshData: () => Promise<boolean>;
     getVehicle: (id: number) => Vehicle | undefined;
-    getVehicleMaintenance: (vehicleId: number) => Maintenance[];
-    getMaintenance: (id: number) => Maintenance | undefined;
+    getVehicleMaintenance: (vehicleId: number) => MaintenanceRecord[];
+    getMaintenance: (id: number) => MaintenanceRecord | undefined;
     addVehicle: (vehicleData: VehicleFormData) => Promise<Vehicle>;
     updateVehicle: (id: number, vehicleData: Partial<VehicleFormData>) => Promise<Vehicle | undefined>;
     deleteVehicle: (id: number) => Promise<boolean>;
-    addMaintenance: (maintenanceData: MaintenanceFormData) => Promise<Maintenance>;
-    updateMaintenance: (id: number, maintenanceData: Partial<MaintenanceFormData>) => Promise<Maintenance | undefined>;
+    addMaintenance: (maintenanceData: CreateMaintenanceRecordDto) => Promise<MaintenanceRecord>;
+    updateMaintenance: (id: number, maintenanceData: Partial<UpdateMaintenanceRecordDto>) => Promise<MaintenanceRecord | undefined>;
     deleteMaintenance: (id: number) => Promise<boolean>;
 }
 
@@ -34,7 +34,7 @@ export const VehiclesContext = createContext<VehiclesContextType>({
     addVehicle: async () => ({} as Vehicle),
     updateVehicle: async () => undefined,
     deleteVehicle: async () => false,
-    addMaintenance: async () => ({} as Maintenance),
+    addMaintenance: async () => ({} as MaintenanceRecord),
     updateMaintenance: async () => undefined,
     deleteMaintenance: async () => false
 });
@@ -45,7 +45,7 @@ interface VehiclesProviderProps {
 
 export function VehiclesProvider({ children }: VehiclesProviderProps) {
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-    const [maintenance, setMaintenance] = useState<Maintenance[]>([]);
+    const [maintenance, setMaintenance] = useState<MaintenanceRecord[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -62,11 +62,11 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
             setVehicles(activeVehicles);
 
             // Cargar mantenimientos de todos los vehículos activos
-            let allMaintenance: Maintenance[] = [];
+            let allMaintenance: MaintenanceRecord[] = [];
 
             for (const vehicle of activeVehicles) {
                 try {
-                    const vehicleMaintenance = await MaintenanceService.getMaintenanceByVehicle(vehicle.id_vehiculo);
+                    const vehicleMaintenance = await MaintenanceService.getRecordsByVehicle(vehicle.id_vehiculo);
                     allMaintenance = [...allMaintenance, ...vehicleMaintenance];
                 } catch (err) {
                     console.error(`Error al cargar mantenimientos del vehículo ${vehicle.id_vehiculo}:`, err);
@@ -102,12 +102,12 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
 
     // Obtener los mantenimientos de un vehículo
     const getVehicleMaintenance = (vehicleId: number) => {
-        return maintenance.filter(item => item.vehicleId === vehicleId);
+        return maintenance.filter(item => item.id_vehiculo === vehicleId);
     };
 
     // Obtener un mantenimiento por ID
     const getMaintenance = (id: number) => {
-        return maintenance.find(item => item.id === id);
+        return maintenance.find(item => item.id_registro === id);
     };
 
     // Añadir un nuevo vehículo
@@ -177,7 +177,7 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
 
             // También eliminar los mantenimientos asociados del estado local
             setMaintenance(prevMaintenance =>
-                prevMaintenance.filter(m => m.vehicleId !== id)
+                prevMaintenance.filter(m => m.id_vehiculo !== id)
             );
 
             return true;
@@ -193,34 +193,21 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
     };
 
     // Método para añadir un nuevo mantenimiento
-    const addMaintenance = async (maintenanceData: MaintenanceFormData) => {
+    const addMaintenance = async (maintenanceData: CreateMaintenanceRecordDto) => {
         setIsLoading(true);
         try {
-            // Determinar si estamos usando el formato antiguo o nuevo
-            let newMaintenance;
-            if ('vehicleId' in maintenanceData) {
-                // Formato antiguo - asegurarse de que tiene las propiedades requeridas
-                if ('type' in maintenanceData && 'date' in maintenanceData && 'mileage' in maintenanceData) {
-                    newMaintenance = await MaintenanceService.createMaintenanceLegacy(
-                        maintenanceData as any // Cast para evitar error de tipo
-                    );
-                } else {
-                    throw new Error('Datos de mantenimiento incompletos para el formato legacy');
-                }
-            } else {
-                // Formato nuevo
-                newMaintenance = await MaintenanceService.createMaintenance(maintenanceData);
-            }
+            const newMaintenance = await MaintenanceService.createRecord(maintenanceData);
 
+            // Actualizar estado local
             setMaintenance(prev => [...prev, newMaintenance]);
 
             // Actualizar información del vehículo si es necesario
-            const vehicle = getVehicle(newMaintenance.vehicleId);
+            const vehicle = getVehicle(newMaintenance.id_vehiculo);
             if (vehicle) {
                 // Actualizar el kilometraje si el del mantenimiento es mayor
-                if (newMaintenance.mileage > vehicle.kilometraje_actual) {
+                if (newMaintenance.kilometraje > vehicle.kilometraje_actual) {
                     await updateVehicle(vehicle.id_vehiculo, {
-                        kilometraje_actual: newMaintenance.mileage
+                        kilometraje_actual: newMaintenance.kilometraje
                     });
                 }
             }
@@ -238,43 +225,32 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
     };
 
     // Método para actualizar un mantenimiento existente
-    const updateMaintenance = async (id: number, maintenanceData: Partial<MaintenanceFormData>) => {
+    const updateMaintenance = async (id: number, maintenanceData: Partial<UpdateMaintenanceRecordDto>) => {
         const existingMaintenance = getMaintenance(id);
         if (!existingMaintenance) return undefined;
 
         setIsLoading(true);
         try {
-            let updatedMaintenance;
+            // Formatear fecha si viene en formato UI (DD/MM/YYYY)
+            const formattedData = {
+                ...maintenanceData,
+                fecha: maintenanceData.fecha ? MaintenanceService.formatDateForApi(maintenanceData.fecha) : undefined
+            };
 
-            // Determinar si estamos usando el formato antiguo o nuevo
-            if ('vehicleId' in maintenanceData && 'type' in maintenanceData) {
-                // Convertir formato antiguo al nuevo para la API
-                const apiData = {
-                    id_tipo: getMaintenanceTypeId(maintenanceData.type as string | number),
-                    fecha: maintenanceData.fecha,
-                    kilometraje: maintenanceData.kilometraje,
-                    costo: maintenanceData.costo,
-                    notas: maintenanceData.notas
-                };
-                updatedMaintenance = await MaintenanceService.updateMaintenance(id, apiData);
-            } else {
-                // Formato nuevo, pasar directamente
-                updatedMaintenance = await MaintenanceService.updateMaintenance(id, maintenanceData);
-            }
+            const updatedMaintenance = await MaintenanceService.updateRecord(id, formattedData);
 
             // Actualizar el mantenimiento en el estado local
             setMaintenance(prevMaintenance =>
-                prevMaintenance.map(m => m.id === id ? updatedMaintenance : m)
+                prevMaintenance.map(m => m.id_registro === id ? updatedMaintenance : m)
             );
 
             // Si se actualizó el kilometraje, actualizar también el vehículo
-            const mileage = updatedMaintenance.mileage;
-            if (mileage) {
-                const vehicle = getVehicle(existingMaintenance.vehicleId);
-                if (vehicle && mileage > vehicle.kilometraje_actual) {
+            if (maintenanceData.kilometraje) {
+                const vehicle = getVehicle(existingMaintenance.id_vehiculo);
+                if (vehicle && maintenanceData.kilometraje > vehicle.kilometraje_actual) {
                     // Actualizar el kilometraje del vehículo si el nuevo es mayor
                     await updateVehicle(vehicle.id_vehiculo, {
-                        kilometraje_actual: mileage
+                        kilometraje_actual: maintenanceData.kilometraje
                     });
                 }
             }
@@ -290,6 +266,7 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
             setIsLoading(false);
         }
     };
+
     // Eliminar un mantenimiento
     const deleteMaintenance = async (id: number) => {
         const existingMaintenance = getMaintenance(id);
@@ -297,11 +274,11 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
 
         setIsLoading(true);
         try {
-            await MaintenanceService.deleteMaintenance(id);
+            await MaintenanceService.deleteRecord(id);
 
             // Eliminar del estado local
             setMaintenance(prevMaintenance =>
-                prevMaintenance.filter(m => m.id !== id)
+                prevMaintenance.filter(m => m.id_registro !== id)
             );
 
             return true;
@@ -314,19 +291,6 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
         } finally {
             setIsLoading(false);
         }
-    };
-    // Implementación temporal - en producción deberías obtener los IDs del backend
-    const getMaintenanceTypeId = (typeName: string | number) => {
-        const typeMap: Record<string, number> = {
-            'Cambio de Aceite': 1,
-            'Revisión de Frenos': 2,
-            'Neumáticos': 3,
-            'Alineación y Balanceo': 4,
-            'Filtro de Aire': 5,
-            'Revisión General': 6
-        };
-
-        return typeMap[String(typeName)] || 7; // 7 = Personalizado
     };
 
     const value = {
