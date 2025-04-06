@@ -192,32 +192,36 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
         }
     };
 
-    // Añadir un nuevo mantenimiento
+    // Método para añadir un nuevo mantenimiento
     const addMaintenance = async (maintenanceData: MaintenanceFormData) => {
         setIsLoading(true);
         try {
-            const newMaintenance = await MaintenanceService.createMaintenance(maintenanceData);
+            // Determinar si estamos usando el formato antiguo o nuevo
+            let newMaintenance;
+            if ('vehicleId' in maintenanceData) {
+                // Formato antiguo - asegurarse de que tiene las propiedades requeridas
+                if ('type' in maintenanceData && 'date' in maintenanceData && 'mileage' in maintenanceData) {
+                    newMaintenance = await MaintenanceService.createMaintenanceLegacy(
+                        maintenanceData as any // Cast para evitar error de tipo
+                    );
+                } else {
+                    throw new Error('Datos de mantenimiento incompletos para el formato legacy');
+                }
+            } else {
+                // Formato nuevo
+                newMaintenance = await MaintenanceService.createMaintenance(maintenanceData);
+            }
+
             setMaintenance(prev => [...prev, newMaintenance]);
 
             // Actualizar información del vehículo si es necesario
             const vehicle = getVehicle(newMaintenance.vehicleId);
             if (vehicle) {
-                // Calculamos la fecha del próximo mantenimiento (ejemplo: 3 meses después)
-                const nextDate = new Date(newMaintenance.date);
-                nextDate.setMonth(nextDate.getMonth() + 3);
-                const nextDateStr = nextDate.toISOString().split('T')[0];
-
-                // Actualizar el kilometraje y fechas de mantenimiento
-                const updatedVehicle = await updateVehicle(vehicle.id_vehiculo, {
-                    kilometraje_actual: newMaintenance.mileage
-                });
-
-                // Si no pudimos actualizar el vehículo, al menos actualizar el estado local
-                if (!updatedVehicle) {
-                    setVehicles(prevVehicles =>
-                        prevVehicles.map(v => v.id_vehiculo === vehicle.id_vehiculo ?
-                            { ...v, kilometraje_actual: newMaintenance.mileage } : v)
-                    );
+                // Actualizar el kilometraje si el del mantenimiento es mayor
+                if (newMaintenance.mileage > vehicle.kilometraje_actual) {
+                    await updateVehicle(vehicle.id_vehiculo, {
+                        kilometraje_actual: newMaintenance.mileage
+                    });
                 }
             }
 
@@ -233,14 +237,30 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
         }
     };
 
-    // Actualizar un mantenimiento existente
+    // Método para actualizar un mantenimiento existente
     const updateMaintenance = async (id: number, maintenanceData: Partial<MaintenanceFormData>) => {
         const existingMaintenance = getMaintenance(id);
         if (!existingMaintenance) return undefined;
 
         setIsLoading(true);
         try {
-            const updatedMaintenance = await MaintenanceService.updateMaintenance(id, maintenanceData);
+            let updatedMaintenance;
+
+            // Determinar si estamos usando el formato antiguo o nuevo
+            if ('vehicleId' in maintenanceData && 'type' in maintenanceData) {
+                // Convertir formato antiguo al nuevo para la API
+                const apiData = {
+                    id_tipo: getMaintenanceTypeId(maintenanceData.type as string | number),
+                    fecha: maintenanceData.fecha,
+                    kilometraje: maintenanceData.kilometraje,
+                    costo: maintenanceData.costo,
+                    notas: maintenanceData.notas
+                };
+                updatedMaintenance = await MaintenanceService.updateMaintenance(id, apiData);
+            } else {
+                // Formato nuevo, pasar directamente
+                updatedMaintenance = await MaintenanceService.updateMaintenance(id, maintenanceData);
+            }
 
             // Actualizar el mantenimiento en el estado local
             setMaintenance(prevMaintenance =>
@@ -248,12 +268,13 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
             );
 
             // Si se actualizó el kilometraje, actualizar también el vehículo
-            if (maintenanceData.mileage && Number(maintenanceData.mileage) > 0) {
+            const mileage = updatedMaintenance.mileage;
+            if (mileage) {
                 const vehicle = getVehicle(existingMaintenance.vehicleId);
-                if (vehicle && Number(maintenanceData.mileage) > vehicle.kilometraje_actual) {
+                if (vehicle && mileage > vehicle.kilometraje_actual) {
                     // Actualizar el kilometraje del vehículo si el nuevo es mayor
                     await updateVehicle(vehicle.id_vehiculo, {
-                        kilometraje_actual: Number(maintenanceData.mileage)
+                        kilometraje_actual: mileage
                     });
                 }
             }
@@ -269,7 +290,6 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
             setIsLoading(false);
         }
     };
-
     // Eliminar un mantenimiento
     const deleteMaintenance = async (id: number) => {
         const existingMaintenance = getMaintenance(id);
@@ -294,6 +314,19 @@ export function VehiclesProvider({ children }: VehiclesProviderProps) {
         } finally {
             setIsLoading(false);
         }
+    };
+    // Implementación temporal - en producción deberías obtener los IDs del backend
+    const getMaintenanceTypeId = (typeName: string | number) => {
+        const typeMap: Record<string, number> = {
+            'Cambio de Aceite': 1,
+            'Revisión de Frenos': 2,
+            'Neumáticos': 3,
+            'Alineación y Balanceo': 4,
+            'Filtro de Aire': 5,
+            'Revisión General': 6
+        };
+
+        return typeMap[String(typeName)] || 7; // 7 = Personalizado
     };
 
     const value = {

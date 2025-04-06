@@ -1,220 +1,327 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+// app/(app)/vehicles/[id]/maintenance/[id].tsx
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useVehicles } from '@/contexts/VehiclesContext';
+import { useMaintenance } from '@/contexts/MaintenanceContext';
+import { MaintenanceRecord, MaintenanceType } from '@/types/Maintenance';
 
-// Datos de ejemplo
-const maintenanceData = {
-    '1': {
-        id: 1,
-        vehicleId: 1,
-        type: 'Cambio de Aceite',
-        date: '15/01/2025',
-        mileage: 32500,
-        cost: 180,
-        workshop: 'Servicio Oficial Toyota',
-        notes: 'Aceite sintético 5W-30, filtro de aceite nuevo. Técnico recomendó revisar los frenos en el próximo mantenimiento.',
-        photos: ['photo1.jpg', 'photo2.jpg'],
-        status: 'completed'
-    },
-    '2': {
-        id: 2,
-        vehicleId: 1,
-        type: 'Revisión de Frenos',
-        date: '12/12/2024',
-        mileage: 30000,
-        cost: 250,
-        workshop: 'Frenos Express',
-        notes: 'Cambio de pastillas delanteras y revisión de discos. Los discos traseros están en buen estado.',
-        photos: ['photo3.jpg'],
-        status: 'completed'
-    }
-};
-
-// Datos de ejemplo de vehículos
-const vehiclesData = {
-    '1': {
-        id: 1,
-        brand: 'Toyota',
-        model: 'Corolla',
-        year: 2019,
-        plate: 'ABC-123',
-    },
-    '2': {
-        id: 2,
-        brand: 'Honda',
-        model: 'Civic',
-        year: 2020,
-        plate: 'XYZ-789',
-    }
-};
+// Componentes
+import StaticHeader from '@/components/common/StaticHeader';
+import Card from '@/components/ui/Card';
+import Badge from '@/components/ui/Badge';
+import LoadingErrorIndicator from '@/components/common/LoadingErrorIndicator';
 
 export default function MaintenanceDetailScreen() {
-    const params = useLocalSearchParams();
     const router = useRouter();
+    const params = useLocalSearchParams();
+    const { theme, isDark } = useTheme();
 
-    // Obtener IDs de parámetros de ruta
-    const vehicleId = params.id as string;
-    const maintenanceId = params.id2 || params[0] as string;
+    // Obtener IDs
+    const vehicleId = Number(params.id);
+    // El segundo id puede venir en diferentes formatos según la navegación
+    const maintenanceId = params.id2
+        ? Number(params.id2)
+        : Number(Array.isArray(params[0]) ? params[0][0] : params[0]);
 
-    // Obtener datos
-    const maintenance = maintenanceData[maintenanceId.toString() as keyof typeof maintenanceData];
-    const vehicle = vehiclesData[vehicleId.toString() as keyof typeof vehiclesData];
+    // Contextos
+    const { getVehicle } = useVehicles();
+    const {
+        getRecordById,
+        loadRecordsByVehicle,
+        deleteRecord,
+        types,
+        loadTypes,
+        isLoading,
+        error
+    } = useMaintenance();
 
-    // Estado para modal de confirmación
+    // Estados
+    const [maintenance, setMaintenance] = useState<MaintenanceRecord | null>(null);
+    const [maintenanceType, setMaintenanceType] = useState<MaintenanceType | null>(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
-    // Manejar editar mantenimiento
+    // Obtener el vehículo
+    const vehicle = getVehicle(vehicleId);
+
+    // Cargar datos
+    useEffect(() => {
+        const loadData = async () => {
+            // Cargar registros del vehículo si no están cargados
+            await loadRecordsByVehicle(vehicleId);
+
+            // Cargar tipos si no están cargados
+            if (types.length === 0) {
+                await loadTypes();
+            }
+
+            // Obtener el registro específico
+            const record = getRecordById(maintenanceId);
+            if (record) {
+                setMaintenance(record);
+
+                // Buscar el tipo de mantenimiento asociado
+                const type = types.find(t => t.id_tipo === record.id_tipo);
+                if (type) {
+                    setMaintenanceType(type);
+                }
+            }
+        };
+
+        loadData();
+    }, [vehicleId, maintenanceId]);
+
+    // Manejar edición
     const handleEdit = () => {
-        // Aquí iría la navegación a la pantalla de edición
-        Alert.alert('Función no implementada', 'La edición de mantenimiento aún no está implementada');
+        router.push(`/vehicles/${vehicleId}/maintenance/edit/${maintenanceId}`);
     };
 
-    // Manejar eliminar mantenimiento
+    // Manejar eliminación
     const handleDelete = () => {
         setShowDeleteConfirm(true);
     };
 
     // Confirmar eliminación
-    const confirmDelete = () => {
-        // Aquí iría la lógica para eliminar
-        Alert.alert('Registro eliminado', 'El registro de mantenimiento ha sido eliminado');
-        setShowDeleteConfirm(false);
-        router.back();
+    const confirmDelete = async () => {
+        setIsDeleting(true);
+        try {
+            await deleteRecord(maintenanceId);
+            Alert.alert(
+                "Registro eliminado",
+                "El registro de mantenimiento ha sido eliminado exitosamente",
+                [{ text: "OK", onPress: () => router.back() }]
+            );
+        } catch (error) {
+            console.error('Error al eliminar mantenimiento:', error);
+        } finally {
+            setIsDeleting(false);
+            setShowDeleteConfirm(false);
+        }
     };
 
-    if (!maintenance || !vehicle) {
+    // Funciones de formateo
+    const formatDate = (dateString?: string | Date): string => {
+        if (!dateString) return 'N/A';
+
+        try {
+            const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+            return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+        } catch (error) {
+            console.error('Error formateando fecha:', error);
+            return String(dateString);
+        }
+    };
+
+    const formatCost = (cost?: number): string => {
+        if (cost === undefined || cost === null) return 'No registrado';
+        return `$${cost.toFixed(2)}`;
+    };
+
+    if (!vehicle) {
         return (
-            <View style={styles.container}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()}>
-                        <Feather name="arrow-left" size={24} color="#000" />
-                    </TouchableOpacity>
-                    <Text style={styles.title}>Detalle no encontrado</Text>
-                </View>
-                <View style={styles.content}>
-                    <Text>El registro de mantenimiento o vehículo no existe.</Text>
+            <View style={[styles.container, { backgroundColor: theme.background }]}>
+                <StaticHeader title="Detalle de Mantenimiento" theme={theme} />
+                <View style={styles.contentCenter}>
+                    <Text style={{ color: theme.text }}>Vehículo no encontrado</Text>
                 </View>
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()}>
-                    <Feather name="arrow-left" size={24} color="#000" />
-                </TouchableOpacity>
-                <Text style={styles.title}>Detalle de Mantenimiento</Text>
-                <TouchableOpacity>
-                    <Feather name="more-vertical" size={24} color="#000" />
-                </TouchableOpacity>
-            </View>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+            <StaticHeader title="Detalle de Mantenimiento" theme={theme} />
 
-            <ScrollView style={styles.content}>
-                {/* Maintenance Header */}
-                <View style={styles.card}>
-                    <Text style={styles.maintenanceType}>{maintenance.type}</Text>
-                    <Text style={styles.vehicleInfo}>{vehicle.brand} {vehicle.model} ({vehicle.year})</Text>
+            {/* Indicador de carga o error */}
+            <LoadingErrorIndicator
+                isLoading={isLoading && !maintenance}
+                error={error}
+                loadingMessage="Cargando detalles del mantenimiento..."
+                theme={theme}
+            />
 
-                    <View style={styles.costContainer}>
-                        <Text style={styles.costLabel}>Costo:</Text>
-                        <Text style={styles.costValue}>${maintenance.cost.toFixed(2)}</Text>
-                    </View>
-                </View>
+            {maintenance ? (
+                <ScrollView
+                    style={styles.content}
+                    contentContainerStyle={styles.contentContainer}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {/* Encabezado */}
+                    <Card>
+                        <View style={styles.header}>
+                            <View>
+                                <Text style={[styles.maintenanceType, { color: theme.text }]}>
+                                    {maintenanceType?.nombre || 'Mantenimiento'}
+                                </Text>
+                                <Text style={[styles.vehicleInfo, { color: theme.secondaryText }]}>
+                                    {vehicle.marca?.nombre} {vehicle.modelo?.nombre} ({vehicle.anio})
+                                </Text>
+                            </View>
 
-                {/* Maintenance Details */}
-                <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>Detalles</Text>
-
-                    <View style={styles.detailRow}>
-                        <View style={styles.detailItem}>
-                            <Feather name="calendar" size={16} color="#666" />
-                            <Text style={styles.detailLabel}>Fecha</Text>
-                            <Text style={styles.detailValue}>{maintenance.date}</Text>
+                            <Badge
+                                label="Completado"
+                                variant="success"
+                                size="small"
+                                icon="check"
+                            />
                         </View>
 
-                        <View style={styles.detailItem}>
-                            <Feather name="map-pin" size={16} color="#666" />
-                            <Text style={styles.detailLabel}>Kilometraje</Text>
-                            <Text style={styles.detailValue}>{maintenance.mileage} km</Text>
+                        <View style={[
+                            styles.costContainer,
+                            { backgroundColor: isDark ? `${theme.primary}15` : '#f0f9ff' }
+                        ]}>
+                            <Text style={[styles.costLabel, { color: theme.text }]}>Costo:</Text>
+                            <Text style={[styles.costValue, { color: theme.primary }]}>
+                                {formatCost(maintenance.costo)}
+                            </Text>
                         </View>
-                    </View>
+                    </Card>
 
-                    {maintenance.workshop && (
-                        <View style={styles.fullDetailItem}>
-                            <Feather name="home" size={16} color="#666" />
-                            <Text style={styles.detailLabel}>Taller</Text>
-                            <Text style={styles.detailValue}>{maintenance.workshop}</Text>
+                    {/* Detalles */}
+                    <Card>
+                        <Text style={[styles.sectionTitle, { color: theme.text }]}>Detalles</Text>
+
+                        <View style={styles.detailRow}>
+                            <View style={styles.detailItem}>
+                                <Feather name="calendar" size={16} color={theme.secondaryText} />
+                                <Text style={[styles.detailLabel, { color: theme.secondaryText }]}>Fecha</Text>
+                                <Text style={[styles.detailValue, { color: theme.text }]}>
+                                    {formatDate(maintenance.fecha)}
+                                </Text>
+                            </View>
+
+                            <View style={styles.detailItem}>
+                                <Feather name="map-pin" size={16} color={theme.secondaryText} />
+                                <Text style={[styles.detailLabel, { color: theme.secondaryText }]}>Kilometraje</Text>
+                                <Text style={[styles.detailValue, { color: theme.text }]}>
+                                    {maintenance.kilometraje.toLocaleString()} km
+                                </Text>
+                            </View>
                         </View>
+
+                        <View style={styles.detailRow}>
+                            <View style={styles.detailItem}>
+                                <Feather name="clock" size={16} color={theme.secondaryText} />
+                                <Text style={[styles.detailLabel, { color: theme.secondaryText }]}>Registrado</Text>
+                                <Text style={[styles.detailValue, { color: theme.text }]}>
+                                    {formatDate(maintenance.fecha_creacion)}
+                                </Text>
+                            </View>
+
+                            <View style={styles.detailItem}>
+                                <Feather name="refresh-cw" size={16} color={theme.secondaryText} />
+                                <Text style={[styles.detailLabel, { color: theme.secondaryText }]}>Actualizado</Text>
+                                <Text style={[styles.detailValue, { color: theme.text }]}>
+                                    {formatDate(maintenance.fecha_actualizacion)}
+                                </Text>
+                            </View>
+                        </View>
+                    </Card>
+
+                    {/* Notas */}
+                    {maintenance.notas && (
+                        <Card>
+                            <Text style={[styles.sectionTitle, { color: theme.text }]}>Notas</Text>
+                            <Text style={[styles.notes, { color: theme.text }]}>
+                                {maintenance.notas}
+                            </Text>
+                        </Card>
                     )}
-                </View>
 
-                {/* Notes */}
-                {maintenance.notes && (
-                    <View style={styles.card}>
-                        <Text style={styles.sectionTitle}>Notas</Text>
-                        <Text style={styles.notes}>{maintenance.notes}</Text>
-                    </View>
-                )}
-
-                {/* Photos */}
-                {maintenance.photos && maintenance.photos.length > 0 && (
-                    <View style={styles.card}>
-                        <Text style={styles.sectionTitle}>Fotos y Documentos</Text>
-                        <View style={styles.photosContainer}>
-                            {maintenance.photos.map((photo, index) => (
-                                <View key={index} style={styles.photoItem}>
-                                    <View style={styles.photoPlaceholder}>
-                                        <Text style={styles.photoPlaceholderText}>Foto {index + 1}</Text>
-                                    </View>
-                                </View>
+                    {/* Archivos Adjuntos */}
+                    {maintenance.archivos_adjuntos && maintenance.archivos_adjuntos.length > 0 && (
+                        <Card>
+                            <Text style={[styles.sectionTitle, { color: theme.text }]}>Archivos Adjuntos</Text>
+                            {maintenance.archivos_adjuntos.map((archivo, index) => (
+                                <TouchableOpacity
+                                    key={archivo.id_archivo}
+                                    style={[styles.attachmentItem, { borderBottomColor: theme.border }]}
+                                >
+                                    <Feather name="file" size={20} color={theme.primary} />
+                                    <Text style={[styles.attachmentName, { color: theme.text }]}>
+                                        {archivo.nombre_archivo}
+                                    </Text>
+                                    <Text style={[styles.attachmentSize, { color: theme.secondaryText }]}>
+                                        {(archivo.tamano_archivo / 1024).toFixed(0)} KB
+                                    </Text>
+                                </TouchableOpacity>
                             ))}
-                        </View>
+                        </Card>
+                    )}
+
+                    {/* Acciones */}
+                    <View style={styles.actionsContainer}>
+                        <TouchableOpacity
+                            style={[styles.editButton, { backgroundColor: theme.card, borderColor: theme.border }]}
+                            onPress={handleEdit}
+                        >
+                            <Feather name="edit-2" size={16} color={theme.primary} />
+                            <Text style={[styles.editButtonText, { color: theme.primary }]}>Editar</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.deleteButton, { backgroundColor: theme.card, borderColor: theme.danger }]}
+                            onPress={handleDelete}
+                        >
+                            <Feather name="trash-2" size={16} color={theme.danger} />
+                            <Text style={[styles.deleteButtonText, { color: theme.danger }]}>Eliminar</Text>
+                        </TouchableOpacity>
                     </View>
-                )}
-
-                {/* Actions */}
-                <View style={styles.actionsContainer}>
-                    <TouchableOpacity
-                        style={styles.editButton}
-                        onPress={handleEdit}
-                    >
-                        <Feather name="edit" size={16} color="#3B82F6" />
-                        <Text style={styles.editButtonText}>Editar</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={handleDelete}
-                    >
-                        <Feather name="trash-2" size={16} color="#EF4444" />
-                        <Text style={styles.deleteButtonText}>Eliminar</Text>
-                    </TouchableOpacity>
+                </ScrollView>
+            ) : !isLoading && (
+                <View style={styles.contentCenter}>
+                    <Text style={{ color: theme.text }}>
+                        Registro de mantenimiento no encontrado
+                    </Text>
                 </View>
-            </ScrollView>
+            )}
 
-            {/* Delete Confirmation Modal */}
+            {/* Modal de confirmación para eliminar */}
             {showDeleteConfirm && (
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modal}>
-                        <Text style={styles.modalTitle}>Eliminar registro</Text>
-                        <Text style={styles.modalMessage}>
+                <View style={[
+                    styles.modalOverlay,
+                    { backgroundColor: 'rgba(0, 0, 0, 0.5)' }
+                ]}>
+                    <View style={[
+                        styles.modal,
+                        { backgroundColor: theme.card }
+                    ]}>
+                        <Text style={[styles.modalTitle, { color: theme.text }]}>
+                            Eliminar registro
+                        </Text>
+                        <Text style={[styles.modalMessage, { color: theme.secondaryText }]}>
                             ¿Estás seguro de que deseas eliminar este registro de mantenimiento? Esta acción no se puede deshacer.
                         </Text>
                         <View style={styles.modalActions}>
                             <TouchableOpacity
-                                style={styles.cancelButton}
+                                style={[
+                                    styles.cancelButton,
+                                    { backgroundColor: isDark ? '#333' : '#f5f5f5' }
+                                ]}
                                 onPress={() => setShowDeleteConfirm(false)}
+                                disabled={isDeleting}
                             >
-                                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                                <Text style={[styles.cancelButtonText, { color: theme.secondaryText }]}>
+                                    Cancelar
+                                </Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={styles.confirmButton}
+                                style={[
+                                    styles.confirmButton,
+                                    { backgroundColor: theme.danger },
+                                    isDeleting && { opacity: 0.7 }
+                                ]}
                                 onPress={confirmDelete}
+                                disabled={isDeleting}
                             >
-                                <Text style={styles.confirmButtonText}>Eliminar</Text>
+                                {isDeleting ? (
+                                    <ActivityIndicator size="small" color="#FFFFFF" />
+                                ) : (
+                                    <Text style={styles.confirmButtonText}>Eliminar</Text>
+                                )}
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -227,29 +334,24 @@ export default function MaintenanceDetailScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+    },
+    content: {
+        flex: 1,
+    },
+    contentContainer: {
+        padding: 16,
+        paddingBottom: 40,
+    },
+    contentCenter: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: 'white',
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    title: {
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    content: {
-        flex: 1,
-        padding: 16,
-    },
-    card: {
-        backgroundColor: 'white',
-        borderRadius: 8,
-        padding: 16,
+        alignItems: 'flex-start',
         marginBottom: 16,
     },
     maintenanceType: {
@@ -258,14 +360,12 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     vehicleInfo: {
-        color: '#666',
-        marginBottom: 16,
+        marginBottom: 4,
     },
     costContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: '#f9f9f9',
         borderRadius: 8,
         padding: 12,
     },
@@ -275,7 +375,6 @@ const styles = StyleSheet.create({
     costValue: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#3B82F6',
     },
     sectionTitle: {
         fontSize: 16,
@@ -284,21 +383,13 @@ const styles = StyleSheet.create({
     },
     detailRow: {
         flexDirection: 'row',
-        marginLeft: -8,
-        marginRight: -8,
+        marginBottom: 8,
     },
     detailItem: {
         flex: 1,
         alignItems: 'flex-start',
-        padding: 8,
-    },
-    fullDetailItem: {
-        alignItems: 'flex-start',
-        padding: 8,
-        marginTop: 8,
     },
     detailLabel: {
-        color: '#666',
         marginTop: 4,
         marginBottom: 4,
     },
@@ -308,26 +399,20 @@ const styles = StyleSheet.create({
     notes: {
         lineHeight: 20,
     },
-    photosContainer: {
+    attachmentItem: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
-        margin: -4,
-    },
-    photoItem: {
-        width: 100,
-        height: 100,
-        margin: 4,
-    },
-    photoPlaceholder: {
-        backgroundColor: '#eee',
-        width: '100%',
-        height: '100%',
-        borderRadius: 8,
-        justifyContent: 'center',
         alignItems: 'center',
+        paddingVertical: 12,
+        borderBottomWidth: 1,
     },
-    photoPlaceholderText: {
-        color: '#999',
+    attachmentName: {
+        flex: 1,
+        marginLeft: 10,
+        fontWeight: '500',
+    },
+    attachmentSize: {
+        marginLeft: 8,
+        fontSize: 12,
     },
     actionsContainer: {
         marginBottom: 24,
@@ -336,13 +421,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'white',
         borderRadius: 8,
         padding: 16,
         marginBottom: 12,
+        borderWidth: 1,
     },
     editButtonText: {
-        color: '#3B82F6',
         fontWeight: 'bold',
         marginLeft: 8,
     },
@@ -350,14 +434,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'white',
         borderRadius: 8,
         padding: 16,
         borderWidth: 1,
-        borderColor: '#EF4444',
     },
     deleteButtonText: {
-        color: '#EF4444',
         fontWeight: 'bold',
         marginLeft: 8,
     },
@@ -367,16 +448,19 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'center',
         alignItems: 'center',
         padding: 16,
     },
     modal: {
-        backgroundColor: 'white',
-        borderRadius: 8,
-        padding: 16,
         width: '100%',
+        borderRadius: 12,
+        padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 5,
     },
     modalTitle: {
         fontSize: 18,
@@ -384,30 +468,29 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     modalMessage: {
-        color: '#666',
-        marginBottom: 16,
+        marginBottom: 20,
+        lineHeight: 20,
     },
     modalActions: {
         flexDirection: 'row',
     },
     cancelButton: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
-        borderRadius: 8,
         padding: 12,
+        borderRadius: 8,
         alignItems: 'center',
         marginRight: 8,
     },
     cancelButtonText: {
-        color: '#666',
+        fontWeight: '500',
     },
     confirmButton: {
         flex: 1,
-        backgroundColor: '#EF4444',
-        borderRadius: 8,
         padding: 12,
+        borderRadius: 8,
         alignItems: 'center',
         marginLeft: 8,
+        justifyContent: 'center',
     },
     confirmButtonText: {
         color: 'white',

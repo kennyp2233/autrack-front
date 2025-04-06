@@ -1,174 +1,171 @@
-// services/api/maintenanceService.ts
+// api/maintenanceService.ts
 import { apiRequest } from './config';
-import { Maintenance, MaintenanceFormData } from '@/types/Maintenance';
+import {
+    MaintenanceCategory,
+    MaintenanceType,
+    MaintenanceRecord,
+    MaintenanceReminder,
+    CreateMaintenanceRecordDto,
+    UpdateMaintenanceRecordDto,
+    CreateMaintenanceReminderDto
+} from '@/types/Maintenance';
 
 /**
- * Servicio para gestionar mantenimientos de vehículos
+ * Servicio para interactuar con los endpoints de mantenimiento
  */
 export const MaintenanceService = {
+    // CATEGORÍAS DE MANTENIMIENTO
     /**
-     * Obtiene todos los mantenimientos de un vehículo
-     * @param vehicleId ID del vehículo
+     * Obtener todas las categorías de mantenimiento
      */
-    getMaintenanceByVehicle: async (vehicleId: number): Promise<Maintenance[]> => {
-        const response = await apiRequest<any[]>(`/maintenance/vehicle/${vehicleId}`);
-
-        // Transformar la respuesta de la API a nuestro modelo de datos
-        return response.map(item => ({
-            id: item.id_mantenimiento,
-            vehicleId: item.id_vehiculo,
-            type: item.tipo,
-            date: item.fecha,
-            time: item.hora,
-            mileage: item.kilometraje,
-            cost: item.costo,
-            location: item.lugar,
-            notes: item.notas,
-            photos: item.fotos ? JSON.parse(item.fotos) : [],
-            status: item.estado,
-            createdAt: item.fecha_creacion,
-            updatedAt: item.fecha_actualizacion
-        }));
+    getAllCategories: async (): Promise<MaintenanceCategory[]> => {
+        return await apiRequest<MaintenanceCategory[]>('/maintenance/categories');
     },
 
     /**
-     * Obtiene un mantenimiento específico por su ID
-     * @param id ID del mantenimiento
+     * Obtener una categoría por su ID
      */
-    getMaintenanceById: async (id: number): Promise<Maintenance> => {
-        const response = await apiRequest<any>(`/maintenance/${id}`);
-
-        // Transformar la respuesta de la API a nuestro modelo de datos
-        return {
-            id: response.id_mantenimiento,
-            vehicleId: response.id_vehiculo,
-            type: response.tipo,
-            date: response.fecha,
-            time: response.hora,
-            mileage: response.kilometraje,
-            cost: response.costo,
-            location: response.lugar,
-            notes: response.notas,
-            photos: response.fotos ? JSON.parse(response.fotos) : [],
-            status: response.estado,
-            createdAt: response.fecha_creacion,
-            updatedAt: response.fecha_actualizacion
-        };
+    getCategoryById: async (id: number): Promise<MaintenanceCategory> => {
+        return await apiRequest<MaintenanceCategory>(`/maintenance/categories/${id}`);
     },
 
     /**
-     * Crea un nuevo registro de mantenimiento
-     * @param maintenanceData Datos del mantenimiento a crear
+     * Crear una nueva categoría de mantenimiento
      */
-    createMaintenance: async (maintenanceData: MaintenanceFormData): Promise<Maintenance> => {
-        const requestData = {
-            id_vehiculo: maintenanceData.vehicleId,
-            tipo: maintenanceData.type,
-            fecha: maintenanceData.date,
-            hora: maintenanceData.time,
-            kilometraje: Number(maintenanceData.mileage),
-            costo: maintenanceData.cost ? Number(maintenanceData.cost) : null,
-            lugar: maintenanceData.location,
-            notas: maintenanceData.notes,
-            fotos: maintenanceData.photos ? JSON.stringify(maintenanceData.photos) : '[]',
-            estado: 'completed'
-        };
+    createCategory: async (data: { nombre: string, descripcion?: string }): Promise<MaintenanceCategory> => {
+        return await apiRequest<MaintenanceCategory>('/maintenance/categories', 'POST', data);
+    },
 
-        const response = await apiRequest<any>(
-            '/maintenance',
-            'POST',
-            requestData
-        );
-
-        // Transformar la respuesta de la API a nuestro modelo de datos
-        return {
-            id: response.id_mantenimiento,
-            vehicleId: response.id_vehiculo,
-            type: response.tipo,
-            date: response.fecha,
-            time: response.hora,
-            mileage: response.kilometraje,
-            cost: response.costo,
-            location: response.lugar,
-            notes: response.notas,
-            photos: response.fotos ? JSON.parse(response.fotos) : [],
-            status: response.estado,
-            createdAt: response.fecha_creacion,
-            updatedAt: response.fecha_actualizacion
-        };
+    // TIPOS DE MANTENIMIENTO
+    /**
+     * Obtener todos los tipos de mantenimiento
+     */
+    getAllTypes: async (): Promise<MaintenanceType[]> => {
+        return await apiRequest<MaintenanceType[]>('/maintenance/types');
     },
 
     /**
-     * Actualiza un mantenimiento existente
-     * @param id ID del mantenimiento a actualizar
-     * @param maintenanceData Datos a actualizar del mantenimiento
+     * Obtener un tipo de mantenimiento por su ID
      */
-    updateMaintenance: async (id: number, maintenanceData: Partial<MaintenanceFormData>): Promise<Maintenance> => {
-        const requestData: any = {};
-
-        if (maintenanceData.type) requestData.tipo = maintenanceData.type;
-        if (maintenanceData.date) requestData.fecha = maintenanceData.date;
-        if (maintenanceData.time) requestData.hora = maintenanceData.time;
-        if (maintenanceData.mileage) requestData.kilometraje = Number(maintenanceData.mileage);
-        if (maintenanceData.cost) requestData.costo = Number(maintenanceData.cost);
-        if (maintenanceData.location) requestData.lugar = maintenanceData.location;
-        if (maintenanceData.notes) requestData.notas = maintenanceData.notes;
-        if (maintenanceData.photos) requestData.fotos = JSON.stringify(maintenanceData.photos);
-
-        const response = await apiRequest<any>(
-            `/maintenance/${id}`,
-            'PATCH',
-            requestData
-        );
-
-        // Transformar la respuesta de la API a nuestro modelo de datos
-        return {
-            id: response.id_mantenimiento,
-            vehicleId: response.id_vehiculo,
-            type: response.tipo,
-            date: response.fecha,
-            time: response.hora,
-            mileage: response.kilometraje,
-            cost: response.costo,
-            location: response.lugar,
-            notes: response.notas,
-            photos: response.fotos ? JSON.parse(response.fotos) : [],
-            status: response.estado,
-            createdAt: response.fecha_creacion,
-            updatedAt: response.fecha_actualizacion
-        };
+    getTypeById: async (id: number): Promise<MaintenanceType> => {
+        return await apiRequest<MaintenanceType>(`/maintenance/types/${id}`);
     },
 
     /**
-     * Elimina un registro de mantenimiento
-     * @param id ID del mantenimiento a eliminar
+     * Obtener tipos de mantenimiento por categoría
      */
-    deleteMaintenance: async (id: number): Promise<boolean> => {
-        await apiRequest<void>(
-            `/maintenance/${id}`,
-            'DELETE'
-        );
-
-        return true;
+    getTypesByCategory: async (categoryId: number): Promise<MaintenanceType[]> => {
+        return await apiRequest<MaintenanceType[]>(`/maintenance/categories/${categoryId}/types`);
     },
 
     /**
-     * Obtiene estadísticas de mantenimiento para un vehículo
-     * @param vehicleId ID del vehículo
+     * Crear un nuevo tipo de mantenimiento
      */
-    getMaintenanceStats: async (vehicleId: number): Promise<{
-        totalCost: number;
-        recordCount: number;
-        lastMaintenanceDate: string;
-        nextMaintenanceEstimate: string;
-    }> => {
-        const response = await apiRequest<any>(`/maintenance/stats/${vehicleId}`);
+    createType: async (data: {
+        id_categoria: number,
+        nombre: string,
+        descripcion?: string,
+        costo_estimado?: number,
+        frecuencia_recomendada_meses?: number,
+        frecuencia_recomendada_km?: number
+    }): Promise<MaintenanceType> => {
+        return await apiRequest<MaintenanceType>('/maintenance/types', 'POST', data);
+    },
 
-        return {
-            totalCost: response.costo_total || 0,
-            recordCount: response.cantidad_registros || 0,
-            lastMaintenanceDate: response.fecha_ultimo_mantenimiento || '',
-            nextMaintenanceEstimate: response.fecha_proximo_mantenimiento || ''
-        };
+    // REGISTROS DE MANTENIMIENTO
+    /**
+     * Obtener todos los registros de mantenimiento de un vehículo
+     */
+    getRecordsByVehicle: async (vehicleId: number): Promise<MaintenanceRecord[]> => {
+        return await apiRequest<MaintenanceRecord[]>(`/maintenance/vehicles/${vehicleId}/records`);
+    },
+
+    /**
+     * Obtener un registro de mantenimiento por su ID
+     */
+    getRecordById: async (id: number): Promise<MaintenanceRecord> => {
+        return await apiRequest<MaintenanceRecord>(`/maintenance/records/${id}`);
+    },
+
+    /**
+     * Crear un nuevo registro de mantenimiento
+     */
+    createRecord: async (data: CreateMaintenanceRecordDto): Promise<MaintenanceRecord> => {
+        return await apiRequest<MaintenanceRecord>('/maintenance/records', 'POST', data);
+    },
+
+    /**
+     * Actualizar un registro de mantenimiento
+     */
+    updateRecord: async (id: number, data: UpdateMaintenanceRecordDto): Promise<MaintenanceRecord> => {
+        return await apiRequest<MaintenanceRecord>(`/maintenance/records/${id}`, 'PATCH', data);
+    },
+
+    /**
+     * Eliminar un registro de mantenimiento
+     */
+    deleteRecord: async (id: number): Promise<void> => {
+        await apiRequest<void>(`/maintenance/records/${id}`, 'DELETE');
+    },
+
+    // RECORDATORIOS DE MANTENIMIENTO
+    /**
+     * Obtener todos los recordatorios de un vehículo
+     */
+    getRemindersByVehicle: async (vehicleId: number): Promise<MaintenanceReminder[]> => {
+        return await apiRequest<MaintenanceReminder[]>(`/maintenance/vehicles/${vehicleId}/reminders`);
+    },
+
+    /**
+     * Obtener un recordatorio por su ID
+     */
+    getReminderById: async (id: number): Promise<MaintenanceReminder> => {
+        return await apiRequest<MaintenanceReminder>(`/maintenance/reminders/${id}`);
+    },
+
+    /**
+     * Crear un nuevo recordatorio de mantenimiento
+     */
+    createReminder: async (data: CreateMaintenanceReminderDto): Promise<MaintenanceReminder> => {
+        return await apiRequest<MaintenanceReminder>('/maintenance/reminders', 'POST', data);
+    },
+
+    /**
+     * Desactivar un recordatorio
+     */
+    deactivateReminder: async (id: number): Promise<void> => {
+        await apiRequest<void>(`/maintenance/reminders/${id}`, 'DELETE');
+    },
+
+    // FUNCIONES AUXILIARES
+    /**
+     * Convertir fecha de formato DD/MM/YYYY a YYYY-MM-DD para API
+     */
+    formatDateForApi: (date: string): string => {
+        if (!date) return '';
+
+        // Si ya está en formato ISO o YYYY-MM-DD, retornar tal cual
+        if (date.includes('-')) return date;
+
+        // Convertir de DD/MM/YYYY a YYYY-MM-DD
+        const parts = date.split('/');
+        if (parts.length !== 3) return date;
+
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    },
+
+    /**
+     * Convertir fecha de formato ISO o YYYY-MM-DD a DD/MM/YYYY para UI
+     */
+    formatDateForUI: (date: string | Date): string => {
+        if (!date) return '';
+
+        try {
+            const dateObj = typeof date === 'string' ? new Date(date) : date;
+            return `${String(dateObj.getDate()).padStart(2, '0')}/${String(dateObj.getMonth() + 1).padStart(2, '0')}/${dateObj.getFullYear()}`;
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return String(date);
+        }
     }
 };

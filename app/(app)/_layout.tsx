@@ -6,6 +6,7 @@ import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { VehiclesProvider } from '@/contexts/VehiclesContext';
 import CustomBottomNav from '@/components/common/CustomBottomNav';
 import { useNavLayout } from '@/hooks/useNavLayout';
+import { MaintenanceProvider } from '@/contexts/MaintenanceContext';
 
 // Altura de la barra de navegación
 const NAVBAR_HEIGHT = 65;
@@ -34,6 +35,7 @@ const ThemedAppLayout = () => {
                 <Stack.Screen name="vehicles/[id]/maintenance/index" />
                 <Stack.Screen name="vehicles/[id]/maintenance/add" />
                 <Stack.Screen name="vehicles/[id]/maintenance/[id]" />
+                <Stack.Screen name="vehicles/[id]/maintenance/edit/[id]" />
                 <Stack.Screen name="reports/export" />
                 <Stack.Screen name="profile" />
             </Stack>
@@ -47,9 +49,11 @@ const ThemedAppLayout = () => {
 export default function AppLayout() {
     return (
         <ThemeProvider>
-            <VehiclesProvider>
-                <ThemedAppLayout />
-            </VehiclesProvider>
+            <MaintenanceProvider>
+                <VehiclesProvider>
+                    <ThemedAppLayout />
+                </VehiclesProvider>
+            </MaintenanceProvider>
         </ThemeProvider>
     );
 }

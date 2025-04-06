@@ -1,178 +1,323 @@
 // app/(app)/vehicles/[id]/maintenance/index.tsx
-import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useVehicles } from '@/contexts/VehiclesContext';
+import { Feather } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useMaintenance } from '@/contexts/MaintenanceContext';
+import { useVehicles } from '@/contexts/VehiclesContext';
+import { MaintenanceRecord, MaintenanceFilters } from '@/types/Maintenance';
 
-// Importar componentes personalizados - CORREGIDO: usar el componente correcto de la carpeta maintenance-home-page
-import MaintenanceHeader from '@/components/maintenance/maintenance-home-page/MaintenanceHeader';
-import MaintenanceFilters from '@/components/maintenance/maintenance-home-page/MaintenanceFilters';
-import MaintenanceList from '@/components/maintenance/maintenance-home-page/MaintenanceList'; // CORREGIDO: importación del componente adecuado
-import AddMaintenanceButton from '@/components/maintenance/maintenance-home-page/AddMaintenanceButton';
-import ErrorScreen from '@/components/common/ErrorScreen';
+// Componentes
+import StaticHeader from '@/components/common/StaticHeader';
+import Card from '@/components/ui/Card';
+import Badge from '@/components/ui/Badge';
+import EmptyState from '@/components/ui/EmptyState';
+import LoadingErrorIndicator from '@/components/common/LoadingErrorIndicator';
+import FloatingActionButton from '@/components/ui/FloatingActionButton';
 
-export default function MaintenanceIndexScreen() {
-    const params = useLocalSearchParams();
+export default function MaintenanceListScreen() {
     const router = useRouter();
-    const { getVehicle, getVehicleMaintenance } = useVehicles();
-    const { theme } = useTheme();
-
-    // Obtener ID del vehículo de los parámetros
+    const params = useLocalSearchParams();
     const vehicleId = Number(params.id);
 
-    // Obtener datos del vehículo y sus mantenimientos
-    const vehicle = getVehicle(vehicleId);
-    const allMaintenance = vehicle ? getVehicleMaintenance(vehicleId) : [];
+    const { theme, isDark } = useTheme();
+    const { getVehicle } = useVehicles();
+    const {
+        loadRecordsByVehicle,
+        isLoading,
+        error
+    } = useMaintenance();
 
-    // Estado para filtros
+    // Estados
+    const [maintenanceRecords, setMaintenanceRecords] = useState<MaintenanceRecord[]>([]);
+    const [filteredRecords, setFilteredRecords] = useState<MaintenanceRecord[]>([]);
+    const [searchText, setSearchText] = useState('');
     const [showFilters, setShowFilters] = useState(false);
-    const [filters, setFilters] = useState({
-        type: 'all',
-        dateFrom: '',
-        dateTo: '',
+    const [filters, setFilters] = useState<MaintenanceFilters>({
+        tipo: 'all',
+        fechaDesde: '',
+        fechaHasta: ''
     });
 
-    // Función para filtrar los mantenimientos según los criterios
-    const getFilteredMaintenance = useCallback(() => {
-        if (!vehicle || !allMaintenance) return [];
+    // Obtener el vehículo
+    const vehicle = getVehicle(vehicleId);
 
-        let filtered = [...allMaintenance];
+    // Cargar datos
+    useEffect(() => {
+        const loadData = async () => {
+            const records = await loadRecordsByVehicle(vehicleId);
+            setMaintenanceRecords(records);
+            setFilteredRecords(records);
+        };
 
-        // Filtrar por tipo
-        if (filters.type !== 'all') {
-            // Mapeo de IDs a nombres de tipos
-            const typeMapping: { [key: string]: string } = {
-                'oil': 'Cambio de Aceite',
-                'brakes': 'Revisión de Frenos',
-                'tires': 'Neumáticos',
-            };
+        loadData();
+    }, [vehicleId]);
 
-            const typeToFilter = typeMapping[filters.type] || filters.type;
+    // Aplicar filtros y búsqueda
+    useEffect(() => {
+        if (!maintenanceRecords.length) return;
 
-            filtered = filtered.filter(item =>
-                item.type.toLowerCase().includes(typeToFilter.toLowerCase())
-            );
+        let result = [...maintenanceRecords];
+
+        // Aplicar búsqueda
+        if (searchText) {
+            const searchLower = searchText.toLowerCase();
+            result = result.filter(record => {
+                // Buscar en tipo, fecha, kilometraje, costo, notas
+                return (
+                    String(record.id_tipo).includes(searchLower) ||
+                    (record.fecha && String(record.fecha).toLowerCase().includes(searchLower)) ||
+                    String(record.kilometraje).includes(searchLower) ||
+                    (record.costo && String(record.costo).includes(searchLower)) ||
+                    (record.notas && record.notas.toLowerCase().includes(searchLower))
+                );
+            });
         }
 
-        // Filtrar por fecha desde
-        if (filters.dateFrom) {
-            try {
-                const fromDate = new Date(filters.dateFrom);
-                if (!isNaN(fromDate.getTime())) {
-                    filtered = filtered.filter(item => {
-                        try {
-                            const itemDate = new Date(item.date);
-                            return !isNaN(itemDate.getTime()) && itemDate >= fromDate;
-                        } catch (e) {
-                            return true; // Si hay un error en la conversión, mantener el ítem
-                        }
-                    });
-                }
-            } catch (e) {
-                console.log("Error en fecha desde:", e);
+        // Aplicar filtros
+        if (filters.tipo !== 'all') {
+            // Convertir a número para comparar con id_tipo
+            const tipoId = Number(filters.tipo);
+            if (!isNaN(tipoId)) {
+                result = result.filter(record => record.id_tipo === tipoId);
             }
         }
 
-        // Filtrar por fecha hasta
-        if (filters.dateTo) {
-            try {
-                const toDate = new Date(filters.dateTo);
-                if (!isNaN(toDate.getTime())) {
-                    filtered = filtered.filter(item => {
-                        try {
-                            const itemDate = new Date(item.date);
-                            return !isNaN(itemDate.getTime()) && itemDate <= toDate;
-                        } catch (e) {
-                            return true; // Si hay un error en la conversión, mantener el ítem
-                        }
-                    });
-                }
-            } catch (e) {
-                console.log("Error en fecha hasta:", e);
-            }
+        if (filters.fechaDesde) {
+            const fechaDesde = new Date(convertDateStringToISO(filters.fechaDesde));
+            result = result.filter(record => {
+                const recordDate = new Date(record.fecha);
+                return recordDate >= fechaDesde;
+            });
         }
 
-        // Ordenar por fecha más reciente
-        return filtered.sort((a, b) => {
-            const dateA = new Date(a.date).getTime();
-            const dateB = new Date(b.date).getTime();
-            return dateB - dateA;
+        if (filters.fechaHasta) {
+            const fechaHasta = new Date(convertDateStringToISO(filters.fechaHasta));
+            result = result.filter(record => {
+                const recordDate = new Date(record.fecha);
+                return recordDate <= fechaHasta;
+            });
+        }
+
+        // Ordenar por fecha (más reciente primero)
+        result.sort((a, b) => {
+            const dateA = new Date(a.fecha);
+            const dateB = new Date(b.fecha);
+            return dateB.getTime() - dateA.getTime();
         });
-    }, [vehicle, allMaintenance, filters.type, filters.dateFrom, filters.dateTo]);
 
-    // Obtener los mantenimientos filtrados cada vez que se renderiza
-    const filteredMaintenance = getFilteredMaintenance();
+        setFilteredRecords(result);
+    }, [maintenanceRecords, searchText, filters]);
 
-    // Manejar cambios en los filtros
-    const handleChangeFilter = (name: string, value: string) => {
+    // Funciones auxiliares
+    const formatDate = (dateString?: string | Date): string => {
+        if (!dateString) return 'N/A';
+
+        try {
+            const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+            return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+        } catch (error) {
+            console.error('Error formateando fecha:', error);
+            return String(dateString);
+        }
+    };
+
+    const formatCost = (cost?: number): string => {
+        if (cost === undefined || cost === null) return 'No registrado';
+        return `$${cost.toFixed(2)}`;
+    };
+
+    const convertDateStringToISO = (dateString: string): string => {
+        // Convertir de DD/MM/YYYY a YYYY-MM-DD
+        const parts = dateString.split('/');
+        if (parts.length !== 3) return dateString;
+
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    };
+
+    const getMaintenanceTypeName = (typeId: number): string => {
+        // Esta función debería buscar el nombre del tipo en el contexto
+        // Por simplicidad, retornamos un texto genérico
+        return `Mantenimiento ${typeId}`;
+    };
+
+    // Funciones para manejar navegación y acciones
+    const handleMaintenancePress = (record: MaintenanceRecord) => {
+        router.push(`/vehicles/${vehicleId}/maintenance/${record.id_registro}`);
+    };
+
+    const handleAddMaintenance = () => {
+        router.push(`/vehicles/${vehicleId}/maintenance/add`);
+    };
+
+    const handleToggleFilters = () => {
+        setShowFilters(!showFilters);
+    };
+
+    const handleFilterChange = (name: string, value: string) => {
         setFilters(prev => ({
             ...prev,
             [name]: value
         }));
     };
 
-    // Manejar navegación a la pantalla de detalles de mantenimiento
-    const handleMaintenancePress = (maintenanceId: number) => {
-        router.push(`/vehicles/${vehicleId}/maintenance/${maintenanceId}`);
+    const handleClearFilters = () => {
+        setFilters({
+            tipo: 'all',
+            fechaDesde: '',
+            fechaHasta: ''
+        });
     };
 
-    // Manejar navegación a la pantalla de añadir mantenimiento
-    const handleAddMaintenance = () => {
-        router.push(`/vehicles/${vehicleId}/maintenance/add`);
-    };
+    // Renderizar item de mantenimiento
+    const renderMaintenanceItem = ({ item }: { item: MaintenanceRecord }) => (
+        <TouchableOpacity
+            style={[styles.maintenanceItem, { backgroundColor: theme.card }]}
+            onPress={() => handleMaintenancePress(item)}
+        >
+            <View style={styles.maintenanceHeader}>
+                <Text style={[styles.maintenanceType, { color: theme.text }]}>
+                    {getMaintenanceTypeName(item.id_tipo)}
+                </Text>
+                <Badge
+                    label="Completado"
+                    variant="success"
+                    size="small"
+                />
+            </View>
 
-    // Si no se encuentra el vehículo
+            <View style={styles.maintenanceDetails}>
+                <View style={styles.maintenanceDetailItem}>
+                    <Feather name="calendar" size={14} color={theme.secondaryText} />
+                    <Text style={[styles.maintenanceDetailText, { color: theme.secondaryText }]}>
+                        {formatDate(item.fecha)}
+                    </Text>
+                </View>
+
+                <View style={styles.maintenanceDetailItem}>
+                    <Feather name="map-pin" size={14} color={theme.secondaryText} />
+                    <Text style={[styles.maintenanceDetailText, { color: theme.secondaryText }]}>
+                        {item.kilometraje.toLocaleString()} km
+                    </Text>
+                </View>
+            </View>
+
+            <View style={[styles.maintenanceFooter, { borderTopColor: theme.border }]}>
+                <Text style={[styles.maintenanceCost, { color: theme.primary }]}>
+                    {formatCost(item.costo)}
+                </Text>
+                <Feather name="chevron-right" size={18} color={theme.secondaryText} />
+            </View>
+        </TouchableOpacity>
+    );
+
     if (!vehicle) {
         return (
-            <ErrorScreen
-                title="Vehículo no encontrado"
-                message="No pudimos encontrar la información de este vehículo"
-                buttonText="Volver"
-                onButtonPress={() => router.back()}
-                theme={theme}
-            />
+            <View style={[styles.container, { backgroundColor: theme.background }]}>
+                <StaticHeader title="Mantenimientos" theme={theme} />
+                <View style={styles.contentCenter}>
+                    <Text style={{ color: theme.text }}>
+                        Vehículo no encontrado
+                    </Text>
+                </View>
+            </View>
         );
     }
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <StatusBar barStyle="light-content" backgroundColor={theme.primary} />
+            <StaticHeader
+                title="Historial de Mantenimiento"
+                theme={theme}
+                rightIcon="filter"
+                onRightIconPress={handleToggleFilters}
+            />
 
-            {/* Header */}
-            <MaintenanceHeader
-                vehicle={vehicle}
-                onBack={() => router.back()}
-                onFilter={() => setShowFilters(!showFilters)}
+            {/* Barra de búsqueda */}
+            <View style={[styles.searchContainer, { backgroundColor: theme.card }]}>
+                <View style={[styles.searchBar, { backgroundColor: isDark ? '#333' : '#f5f5f5', borderColor: theme.border }]}>
+                    <Feather name="search" size={18} color={theme.secondaryText} />
+                    <TextInput
+                        style={[styles.searchInput, { color: theme.text }]}
+                        placeholder="Buscar mantenimiento..."
+                        placeholderTextColor={theme.secondaryText}
+                        value={searchText}
+                        onChangeText={setSearchText}
+                    />
+                    {searchText.length > 0 && (
+                        <TouchableOpacity onPress={() => setSearchText('')}>
+                            <Feather name="x" size={18} color={theme.secondaryText} />
+                        </TouchableOpacity>
+                    )}
+                </View>
+
+                {/* Panel de filtros (visible/oculto) */}
+                {showFilters && (
+                    <View style={[styles.filtersPanel, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                        <Text style={[styles.filterTitle, { color: theme.text }]}>Filtros</Text>
+
+                        {/* Aquí irían los controles de filtro */}
+                        <View style={styles.filterActions}>
+                            <TouchableOpacity
+                                style={[styles.clearFiltersBtn, { borderColor: theme.border }]}
+                                onPress={handleClearFilters}
+                            >
+                                <Text style={{ color: theme.secondaryText }}>Limpiar</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.applyFiltersBtn, { backgroundColor: theme.primary }]}
+                                onPress={() => setShowFilters(false)}
+                            >
+                                <Text style={{ color: 'white' }}>Aplicar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                )}
+            </View>
+
+            {/* Indicador de carga o error */}
+            <LoadingErrorIndicator
+                isLoading={isLoading && !maintenanceRecords.length}
+                error={error}
+                loadingMessage="Cargando registros de mantenimiento..."
                 theme={theme}
             />
 
-            {/* Filtros */}
-            <MaintenanceFilters
-                visible={showFilters}
-                filters={filters}
-                onChangeFilter={handleChangeFilter}
-                onApply={() => setShowFilters(false)}
-                onClear={() => setFilters({
-                    type: 'all',
-                    dateFrom: '',
-                    dateTo: '',
-                })}
-                onClose={() => setShowFilters(false)}
-                theme={theme}
-            />
+            {/* Lista de mantenimientos */}
+            {filteredRecords.length > 0 ? (
+                <FlatList
+                    data={filteredRecords}
+                    renderItem={renderMaintenanceItem}
+                    keyExtractor={(item) => item.id_registro.toString()}
+                    contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
+                    ListHeaderComponent={
+                        <View style={styles.listHeader}>
+                            <Text style={[styles.listHeaderText, { color: theme.text }]}>
+                                {filteredRecords.length} registro{filteredRecords.length !== 1 ? 's' : ''}
+                            </Text>
+                        </View>
+                    }
+                />
+            ) : !isLoading && (
+                <EmptyState
+                    icon="clipboard"
+                    title={searchText.length > 0 ? "No se encontraron resultados" : "No hay registros de mantenimiento"}
+                    message={searchText.length > 0
+                        ? `No hay registros que coincidan con "${searchText}"`
+                        : "Agrega tu primer mantenimiento para este vehículo"
+                    }
+                    buttonText={searchText.length > 0 ? "Limpiar búsqueda" : "Agregar mantenimiento"}
+                    onButtonPress={searchText.length > 0 ? () => setSearchText('') : handleAddMaintenance}
+                />
+            )}
 
-            {/* Lista de mantenimientos - CORREGIDO: actualizado para usar la estructura correcta */}
-            <MaintenanceList
-                maintenanceItems={filteredMaintenance}
-                onItemPress={handleMaintenancePress}
-                theme={theme}
-            />
-
-            {/* Botón para agregar mantenimiento */}
-            <AddMaintenanceButton
+            {/* Botón flotante para agregar */}
+            <FloatingActionButton
+                icon="plus"
                 onPress={handleAddMaintenance}
-                theme={theme}
             />
         </View>
     );
@@ -181,5 +326,108 @@ export default function MaintenanceIndexScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    searchContainer: {
+        padding: 16,
+        zIndex: 10,
+    },
+    searchBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        height: 44,
+    },
+    searchInput: {
+        flex: 1,
+        marginLeft: 8,
+        height: '100%',
+    },
+    filtersPanel: {
+        marginTop: 8,
+        padding: 16,
+        borderWidth: 1,
+        borderRadius: 8,
+    },
+    filterTitle: {
+        fontWeight: 'bold',
+        marginBottom: 12,
+    },
+    filterActions: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        marginTop: 16,
+    },
+    clearFiltersBtn: {
+        borderWidth: 1,
+        borderRadius: 6,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        marginRight: 8,
+    },
+    applyFiltersBtn: {
+        borderRadius: 6,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+    },
+    listContent: {
+        padding: 16,
+        paddingBottom: 80, // Espacio para el FAB
+    },
+    listHeader: {
+        marginBottom: 8,
+    },
+    listHeaderText: {
+        fontWeight: 'bold',
+    },
+    contentCenter: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    maintenanceItem: {
+        borderRadius: 10,
+        marginBottom: 12,
+        padding: 16,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
+    },
+    maintenanceHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    maintenanceType: {
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    maintenanceDetails: {
+        flexDirection: 'row',
+        marginBottom: 8,
+    },
+    maintenanceDetailItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginRight: 16,
+    },
+    maintenanceDetailText: {
+        marginLeft: 6,
+        fontSize: 13,
+    },
+    maintenanceFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingTop: 8,
+        borderTopWidth: 0.5,
+    },
+    maintenanceCost: {
+        fontWeight: 'bold',
     },
 });
