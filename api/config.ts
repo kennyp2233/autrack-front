@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 import { getStorageItem, setStorageItem, removeStorageItem } from './storage';
 
 // Obtener URL base del servidor
-export const API_BASE_URL = Constants.manifest?.extra?.apiUrl || 'https://192.168.100.39:3443/api/v1';
+export const API_BASE_URL = Constants.manifest?.extra?.apiUrl || 'http://192.168.0.101:3000/api/v1';
 
 // Clave para almacenar el token
 const AUTH_TOKEN_KEY = 'auth_token';

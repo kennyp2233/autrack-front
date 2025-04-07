@@ -36,10 +36,10 @@ export default function RegisterScreen() {
 
     // Valores iniciales del formulario
     const initialValues: RegisterFormValues = {
-        fullName: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
+        fullName: 'Kenny',
+        email: 'kennyp41234@gmail.com',
+        password: 'Agente50@',
+        confirmPassword: 'Agente50@',
         acceptTerms: false
     };
 

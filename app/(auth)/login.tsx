@@ -9,7 +9,8 @@ import { useTheme } from '@/contexts/ThemeContext';
 import {
     FormikContainer,
     FormikField,
-    FormikButtonGroup
+    FormikButtonGroup,
+    FormikButton
 } from '@/components/ui/formik';
 
 // Importar esquema de validación
@@ -32,8 +33,8 @@ export default function LoginScreen() {
 
     // Valores iniciales del formulario
     const initialValues: LoginFormValues = {
-        email: '',
-        password: '',
+        email: 'kennyp41234@gmail.com',
+        password: 'Agente50@',
         rememberMe: false
     };
 
@@ -141,14 +142,12 @@ export default function LoginScreen() {
                             </Link>
                         </View>
 
-                        {/* Botones de acción */}
-                        <FormikButtonGroup
-                            submitLabel="Iniciar sesión"
-                            cancelLabel="Cancelar"
-                            onCancel={() => router.back()}
-                            externalLoading={isLoading}
-                            submitVariant="primary"
-                            cancelVariant="outline"
+                        <FormikButton
+                            title="Iniciar sesión"
+                            type="submit"
+                            variant="primary"
+                            loading={isLoading}
+                            fullWidth={true}
                         />
 
                         {/* Enlace para registro */}

@@ -20,20 +20,24 @@ export const AuthService = {
             },
             false // No requiere autenticación previa
         );
-        console.log(response);
+
         // Guardar el token recibido
-        if (response.token) {
-            await setAuthToken(response.token);
+        if (response.token || response.access_token) {
+            const token = response.token || response.access_token;
+            await setAuthToken(token);
 
             // Transformar la respuesta a nuestro formato esperado
+            // Manejamos diferentes estructuras de respuesta
+            const userData = response.user || response.usuario || response;
+
             return {
-                token: response.token,
+                token: token,
                 user: {
-                    id: response.user.id,
-                    email: response.user.email,
-                    fullName: response.user.nombre_completo || response.user.fullName,
-                    createdAt: response.user.created_at || response.user.createdAt,
-                    lastLogin: response.user.last_login || response.user.lastLogin,
+                    id: userData.id || userData.id_usuario,
+                    email: userData.correo || userData.email,
+                    fullName: userData.nombre_completo || userData.fullName,
+                    createdAt: userData.fecha_creacion || userData.created_at || userData.createdAt,
+                    lastLogin: userData.ultimo_inicio_sesion || userData.last_login || userData.lastLogin,
                 }
             };
         }
@@ -50,22 +54,20 @@ export const AuthService = {
             '/auth/register',
             'POST',
             {
-                email: data.email,
-                password: data.password,
+                correo: data.email,
+                contrasena: data.password,
                 nombre_completo: data.fullName,
-                // Confirmar si tu backend necesita el campo password_confirmation
-                password_confirmation: data.confirmPassword
             },
             false // No requiere autenticación previa
         );
 
         // Guardar el token recibido
-        if (response.access_token) {
-            await setAuthToken(response.access_token);
+        if (response.token) {
+            await setAuthToken(response.token);
 
             // Transformar la respuesta a nuestro formato esperado
             return {
-                token: response.access_token,
+                token: response.token,
                 user: {
                     id: response.user.id,
                     email: response.user.email,
