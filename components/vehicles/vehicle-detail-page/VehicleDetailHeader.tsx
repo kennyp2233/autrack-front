@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Platform, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { BaseHeader } from '@/components/ui/headers';
 
 interface VehicleDetailHeaderProps {
     title: string;
@@ -9,6 +10,10 @@ interface VehicleDetailHeaderProps {
     theme: any;
 }
 
+/**
+ * Header para la página de detalle de vehículo
+ * Versión mejorada del componente original con la misma funcionalidad
+ */
 const VehicleDetailHeader: React.FC<VehicleDetailHeaderProps> = ({
     title,
     onBack,
@@ -16,8 +21,10 @@ const VehicleDetailHeader: React.FC<VehicleDetailHeaderProps> = ({
     theme
 }) => {
     return (
-        <SafeAreaView style={[styles.header, { backgroundColor: theme.primary }]}>
-            <View style={styles.statusBarPlaceholder} />
+        <BaseHeader
+            backgroundColor={theme.primary}
+            statusBarStyle="light-content"
+        >
             <View style={styles.headerContent}>
                 <TouchableOpacity
                     onPress={onBack}
@@ -41,25 +48,11 @@ const VehicleDetailHeader: React.FC<VehicleDetailHeaderProps> = ({
                     <Feather name="more-vertical" size={24} color="#fff" />
                 </TouchableOpacity>
             </View>
-        </SafeAreaView>
+        </BaseHeader>
     );
 };
 
 const styles = StyleSheet.create({
-    header: {
-        width: '100%',
-        borderBottomLeftRadius: 15,
-        borderBottomRightRadius: 15,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 6,
-        zIndex: 10,
-    },
-    statusBarPlaceholder: {
-        height: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-    },
     headerContent: {
         height: 56,
         flexDirection: 'row',

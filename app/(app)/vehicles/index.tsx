@@ -7,13 +7,13 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 // Componentes base
 import PageContainer from '@/components/ui/PageContainer';
-import PageHeaderWithSearch from '@/components/ui/PageHeaderWithSearch';
 import EmptyState from '@/components/ui/EmptyState';
 import FloatingActionButton from '@/components/ui/FloatingActionButton';
 import LoadingErrorIndicator from '@/components/common/LoadingErrorIndicator';
 
 // Componentes específicos
 import VehicleItem from '@/components/vehicles/index-vehicle-page/vehicle-list/VehicleItem';
+import { SearchHeader } from '@/components/ui/headers';
 
 export default function VehiclesIndexScreen() {
     const { theme } = useTheme();
@@ -126,12 +126,14 @@ export default function VehiclesIndexScreen() {
 
     return (
         <PageContainer>
-            <PageHeaderWithSearch
+
+            <SearchHeader
                 title="Mis Vehículos"
                 searchValue={searchQuery}
                 onSearchChange={setSearchQuery}
                 onSearchClear={() => setSearchQuery('')}
                 placeholder="Buscar marca, modelo, placa..."
+                theme={theme}
             />
 
             <View style={styles.content}>

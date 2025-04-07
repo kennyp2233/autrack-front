@@ -26,53 +26,63 @@ const StaticHeader: React.FC<StaticHeaderProps> = ({
     const textColor = '#FFFFFF';
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: headerBg }]}>
-            <View style={styles.statusBarPlaceholder} />
-            <View style={styles.headerContent}>
-                {showBackButton ? (
-                    <TouchableOpacity
-                        style={styles.backButton}
-                        onPress={() => router.back()}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        accessibilityRole="button"
-                        accessibilityLabel="Volver atrás"
-                    >
-                        <Feather name="arrow-left" size={24} color={textColor} />
-                    </TouchableOpacity>
-                ) : (
-                    <View style={styles.placeholderWidth} />
-                )}
+        <>
+            {/* StatusBar configurado para coincidir con el color del header */}
+            <StatusBar
+                backgroundColor={headerBg}
+                barStyle="light-content"
+                translucent={true}
+            />
 
-                <Text
-                    style={[styles.title, { color: textColor }]}
-                    numberOfLines={1}
-                    accessibilityRole="header"
-                >
-                    {title}
-                </Text>
+            <SafeAreaView style={[styles.container, { backgroundColor: headerBg }]}>
+                <View style={styles.headerContent}>
+                    {showBackButton ? (
+                        <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={() => router.back()}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            accessibilityRole="button"
+                            accessibilityLabel="Volver atrás"
+                        >
+                            <Feather name="arrow-left" size={24} color={textColor} />
+                        </TouchableOpacity>
+                    ) : (
+                        <View style={styles.placeholderWidth} />
+                    )}
 
-                {rightIcon ? (
-                    <TouchableOpacity
-                        style={styles.rightButton}
-                        onPress={onRightIconPress}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        accessibilityRole="button"
+                    <Text
+                        style={[styles.title, { color: textColor }]}
+                        numberOfLines={1}
+                        accessibilityRole="header"
                     >
-                        <Feather name={rightIcon as any} size={24} color={textColor} />
-                    </TouchableOpacity>
-                ) : (
-                    <View style={styles.placeholderWidth} />
-                )}
-            </View>
-        </SafeAreaView>
+                        {title}
+                    </Text>
+
+                    {rightIcon ? (
+                        <TouchableOpacity
+                            style={styles.rightButton}
+                            onPress={onRightIconPress}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            accessibilityRole="button"
+                        >
+                            <Feather name={rightIcon as any} size={24} color={textColor} />
+                        </TouchableOpacity>
+                    ) : (
+                        <View style={styles.placeholderWidth} />
+                    )}
+                </View>
+            </SafeAreaView>
+        </>
     );
 };
 
 const HEADER_HEIGHT = 56;
+const STATUSBAR_HEIGHT = StatusBar.currentHeight || 0;
 
 const styles = StyleSheet.create({
     container: {
         width: '100%',
+        paddingTop: Platform.OS === 'android' ? STATUSBAR_HEIGHT : 0,
         borderBottomLeftRadius: 15,
         borderBottomRightRadius: 15,
         // Sombra mejorada para dar mejor efecto de elevación
@@ -82,9 +92,6 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 6, // Aumentado para mejor visibilidad en Android
         zIndex: 10,
-    },
-    statusBarPlaceholder: {
-        height: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
     },
     headerContent: {
         height: HEADER_HEIGHT,

@@ -4,8 +4,8 @@ import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
 
-// Componentes
-import StaticHeader from '@/components/common/StaticHeader';
+// Importar el nuevo componente NavigationHeader
+import { NavigationHeader } from '@/components/ui/headers';
 import PageContainer from '@/components/ui/PageContainer';
 import VehicleForm from '@/components/vehicles/add-vehicle-page/vehicle-form/VehicleForm';
 
@@ -15,7 +15,8 @@ export default function AddVehicleScreen() {
 
     return (
         <PageContainer>
-            <StaticHeader
+            {/* Reemplazar StaticHeader por NavigationHeader */}
+            <NavigationHeader
                 title="Agregar Vehículo"
                 showBackButton={true}
                 theme={theme}
