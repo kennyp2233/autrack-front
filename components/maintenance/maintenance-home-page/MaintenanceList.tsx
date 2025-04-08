@@ -2,11 +2,11 @@
 import React from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { Maintenance } from '@/types/Maintenance';
-import MaintenanceItem from './MaintenanceItem';
+import { MaintenanceType } from '@/types/Maintenance';
+import MaintenanceItem from '@/components/vehicles/vehicle-detail-page/MaintenanceItem';
 
 interface MaintenanceListProps {
-    maintenanceItems: Maintenance[];
+    maintenanceItems: MaintenanceType[];
     onItemPress: (id: number) => void;
     theme: any;
 }
@@ -24,7 +24,7 @@ const MaintenanceList = ({ maintenanceItems, onItemPress, theme }: MaintenanceLi
         try {
             // Si ya está en formato DD/MM/YYYY
             if (dateString.includes('/')) return dateString;
-            
+
             const date = new Date(dateString);
             return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
         } catch (e) {
@@ -47,10 +47,10 @@ const MaintenanceList = ({ maintenanceItems, onItemPress, theme }: MaintenanceLi
     }
 
     const renderItem = ({ item }: { item: Maintenance }) => (
-        <MaintenanceItem 
-            item={item} 
-            onPress={() => onItemPress(item.id)} 
-            theme={theme} 
+        <MaintenanceItem
+            item={item}
+            onPress={() => onItemPress(item.id)}
+            theme={theme}
         />
     );
 
@@ -65,7 +65,7 @@ const MaintenanceList = ({ maintenanceItems, onItemPress, theme }: MaintenanceLi
                         Servicios
                     </Text>
                 </View>
-                
+
                 <View style={styles.statItem}>
                     <Text style={[styles.statValue, { color: theme.primary }]}>
                         ${stats.totalCost.toLocaleString()}
@@ -74,7 +74,7 @@ const MaintenanceList = ({ maintenanceItems, onItemPress, theme }: MaintenanceLi
                         Gasto Total
                     </Text>
                 </View>
-                
+
                 <View style={styles.statItem}>
                     <Text style={[styles.statValue, { color: theme.text }]}>
                         {formatDate(stats.mostRecent)}

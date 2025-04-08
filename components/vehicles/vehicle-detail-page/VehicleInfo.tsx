@@ -55,11 +55,10 @@ const VehicleInfo: React.FC<VehicleInfoProps> = ({
                 Información del Vehículo
             </Text>
 
-            {renderDetailItem('Marca', vehicle.brand)}
-            {renderDetailItem('Modelo', vehicle.model)}
-            {renderDetailItem('Año', vehicle.year)}
-            {renderDetailItem('Placa', vehicle.plate)}
-            {vehicle.fuelType && renderDetailItem('Tipo de combustible', vehicle.fuelType)}
+            {renderDetailItem('Marca', vehicle.marca?.nombre)}
+            {renderDetailItem('Modelo', vehicle.modelo?.nombre)}
+            {renderDetailItem('Año', vehicle.anio)}
+            {renderDetailItem('Placa', vehicle.placa)}
             {vehicle.color && renderDetailItem('Color', vehicle.color, renderColorDetail)}
             {vehicle.vinNumber && renderDetailItem('Número VIN', vehicle.vinNumber)}
             {vehicle.purchaseDate && renderDetailItem('Fecha de adquisición', vehicle.purchaseDate)}
